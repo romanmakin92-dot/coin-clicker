@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>МонетоКликер — Лидеры и Престижи</title>
+    <title>МонетоКликер — Полная версия</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -30,7 +30,7 @@
         .buy-btn { background: #b45309; border: none; border-radius: 8px; padding: 5px 12px; color: white; font-weight: 700; font-size: 11px; cursor: pointer; }
         .buy-btn:disabled { background: rgba(0,0,0,0.3); color: #6b7280; cursor: not-allowed; }
         .prestige-card { background: rgba(91,33,182,0.3); border: 1px solid rgba(139,92,246,0.3); border-radius: 14px; padding: 12px; margin-bottom: 12px; }
-        .relic-item { display: inline-block; background: rgba(120,53,15,0.2); border-radius: 12px; padding: 10px; margin: 5px; width: calc(33% - 10px); text-align: center; }
+        .relic-item { display: inline-block; background: rgba(120,53,15,0.2); border-radius: 12px; padding: 10px; margin: 5px; width: calc(25% - 10px); text-align: center; }
         .quest-item { background: rgba(120,53,15,0.2); border-radius: 12px; padding: 10px; margin-bottom: 8px; }
         .progress-bar { background: rgba(0,0,0,0.3); border-radius: 99px; height: 4px; margin-top: 4px; }
         .progress-fill { height: 4px; border-radius: 99px; background: #f59e0b; width: 0%; }
@@ -46,6 +46,9 @@
         .name-input-card input { width: 100%; background: #0a0500; border: 1px solid #b45309; border-radius: 10px; padding: 10px; color: white; margin: 12px 0; }
         .name-input-card button { background: #b45309; border: none; border-radius: 10px; padding: 10px; color: white; font-weight: bold; margin: 5px; cursor: pointer; }
         .nickname-btn { background: rgba(251,191,36,0.2); border: 1px solid rgba(251,191,36,0.3); border-radius: 20px; padding: 4px 12px; font-size: 11px; cursor: pointer; display: inline-block; margin-top: 8px; }
+        .leaderboard-select { display: flex; gap: 8px; margin-bottom: 12px; }
+        .leaderboard-select-btn { background: rgba(120,53,15,0.4); border: none; border-radius: 8px; padding: 6px 12px; color: #a16207; font-size: 12px; cursor: pointer; }
+        .leaderboard-select-btn.active { background: #b45309; color: white; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes coinPop { 0% { opacity: 1; transform: scale(1.4); } 100% { opacity: 0; transform: scale(0.7); } }
         .particle { position: fixed; pointer-events: none; color: #fbbf24; font-weight: bold; font-size: 20px; z-index: 1000; animation: coinPop 0.5s ease-out forwards; }
@@ -116,6 +119,7 @@
         { id: "god_realm", name: "Царство богов", icon: "🏛️", baseCost: 50000000000, cps: 500000000, mult: 1.15 }
     ];
 
+    // НОВЫЕ РЕЛИКВИИ (8 штук)
     const RELICS = [
         { id: "golden_egg", name: "Золотое Яйцо", icon: "🥚", cost: 1, type: "multiplier", value: 1.5 },
         { id: "ancient_coin", name: "Древняя Монета", icon: "🪙", cost: 3, type: "cpc", value: 1.5 },
@@ -123,28 +127,55 @@
         { id: "infinity_gem", name: "Камень Бесконечности", icon: "💎", cost: 10, type: "multiplier", value: 3.0 },
         { id: "time_crystal", name: "Кристалл Времени", icon: "🔷", cost: 20, type: "cps", value: 5.0 },
         { id: "void_heart", name: "Сердце Пустоты", icon: "🖤", cost: 50, type: "multiplier", value: 10.0 },
-        { id: "cosmic_core", name: "Космическое Ядро", icon: "⭐", cost: 100, type: "multiplier", value: 50.0 }
+        { id: "cosmic_core", name: "Космическое Ядро", icon: "⭐", cost: 100, type: "multiplier", value: 50.0 },
+        { id: "wisdom_stone", name: "Камень Мудрости", icon: "📖", cost: 150, type: "multiplier", value: 2.0 },
+        { id: "warrior_heart", name: "Сердце Воина", icon: "⚔️", cost: 200, type: "cpc", value: 3.0 },
+        { id: "dragon_soul", name: "Душа Дракона", icon: "🐲", cost: 300, type: "cps", value: 4.0 },
+        { id: "phoenix_feather", name: "Перо Феникса", icon: "🔥", cost: 500, type: "multiplier", value: 5.0 },
+        { id: "godly_essence", name: "Божественная Сущность", icon: "👑", cost: 1000, type: "multiplier", value: 10.0 },
+        { id: "eternity_fragment", name: "Осколок Вечности", icon: "⌛", cost: 2000, type: "multiplier", value: 20.0 },
+        { id: "creator_spark", name: "Искра Создателя", icon: "✨", cost: 5000, type: "multiplier", value: 50.0 }
     ];
 
+    // НОВЫЕ КВЕСТЫ
     const QUESTS = [
         { id: "q1", name: "Кликер", desc: "50 кликов", icon: "👆", condition: (s) => s.totalClicks >= 50, reward: 500, rewardType: "coins" },
         { id: "q2", name: "Маньяк кликов", desc: "500 кликов", icon: "🖱️", condition: (s) => s.totalClicks >= 500, reward: 5000, rewardType: "coins" },
         { id: "q3", name: "Кликер-бог", desc: "5000 кликов", icon: "⚡", condition: (s) => s.totalClicks >= 5000, reward: 50000, rewardType: "coins" },
-        { id: "q4", name: "Накопитель", desc: "1000 монет", icon: "💰", condition: (s) => s.totalCoins >= 1000, reward: 2000, rewardType: "coins" },
-        { id: "q5", name: "Торговец", desc: "100000 монет", icon: "💎", condition: (s) => s.totalCoins >= 100000, reward: 200000, rewardType: "coins" },
-        { id: "q6", name: "Капиталист", desc: "10 млн монет", icon: "🏦", condition: (s) => s.totalCoins >= 10000000, reward: 20000000, rewardType: "coins" },
-        { id: "q7", name: "Застройщик", desc: "5 зданий одного типа", icon: "🏗️", condition: (s) => s.buildings.some(b => b.count >= 5), reward: 10000, rewardType: "coins" },
-        { id: "q8", name: "Магнат", desc: "25 зданий одного типа", icon: "🏙️", condition: (s) => s.buildings.some(b => b.count >= 25), reward: 500000, rewardType: "coins" },
-        { id: "q9", name: "Перерождение", desc: "1 престиж", icon: "🌟", condition: (s) => s.prestigeLevel >= 1, reward: 1, rewardType: "prestige" },
-        { id: "q10", name: "Ветеран", desc: "3 престижа", icon: "🌠", condition: (s) => s.prestigeLevel >= 3, reward: 3, rewardType: "prestige" },
-        { id: "q11", name: "Империя", desc: "Все типы зданий", icon: "👑", condition: (s) => s.buildings.every(b => b.count > 0), reward: 100000, rewardType: "coins" }
+        { id: "q4", name: "Легенда кликов", desc: "50000 кликов", icon: "🏆", condition: (s) => s.totalClicks >= 50000, reward: 500000, rewardType: "coins" },
+        { id: "q5", name: "Миф кликов", desc: "500000 кликов", icon: "🌟", condition: (s) => s.totalClicks >= 500000, reward: 5000000, rewardType: "coins" },
+        { id: "q6", name: "Бог кликов", desc: "1000000 кликов", icon: "👑", condition: (s) => s.totalClicks >= 1000000, reward: 50000000, rewardType: "coins" },
+        { id: "q7", name: "Накопитель", desc: "1000 монет", icon: "💰", condition: (s) => s.totalCoins >= 1000, reward: 2000, rewardType: "coins" },
+        { id: "q8", name: "Торговец", desc: "100000 монет", icon: "💎", condition: (s) => s.totalCoins >= 100000, reward: 200000, rewardType: "coins" },
+        { id: "q9", name: "Капиталист", desc: "10 млн монет", icon: "🏦", condition: (s) => s.totalCoins >= 10000000, reward: 20000000, rewardType: "coins" },
+        { id: "q10", name: "Миллиардер", desc: "1 млрд монет", icon: "🤑", condition: (s) => s.totalCoins >= 1e9, reward: 200000000, rewardType: "coins" },
+        { id: "q11", name: "Триллионер", desc: "1 трлн монет", icon: "🌌", condition: (s) => s.totalCoins >= 1e12, reward: 2e12, rewardType: "coins" },
+        { id: "q12", name: "Квадриллионер", desc: "1 квадриллион монет", icon: "🌠", condition: (s) => s.totalCoins >= 1e15, reward: 2e15, rewardType: "coins" },
+        { id: "q13", name: "Квинтиллионер", desc: "1 квинтиллион монет", icon: "✨", condition: (s) => s.totalCoins >= 1e18, reward: 2e18, rewardType: "coins" },
+        { id: "q14", name: "Застройщик", desc: "5 зданий одного типа", icon: "🏗️", condition: (s) => s.buildings.some(b => b.count >= 5), reward: 10000, rewardType: "coins" },
+        { id: "q15", name: "Магнат", desc: "25 зданий одного типа", icon: "🏙️", condition: (s) => s.buildings.some(b => b.count >= 25), reward: 500000, rewardType: "coins" },
+        { id: "q16", name: "Воротила", desc: "50 зданий одного типа", icon: "🏢", condition: (s) => s.buildings.some(b => b.count >= 50), reward: 2000000, rewardType: "coins" },
+        { id: "q17", name: "Олигарх", desc: "75 зданий одного типа", icon: "🏛️", condition: (s) => s.buildings.some(b => b.count >= 75), reward: 10000000, rewardType: "coins" },
+        { id: "q18", name: "Империя", desc: "100 зданий одного типа", icon: "👑", condition: (s) => s.buildings.some(b => b.count >= 100), reward: 50000000, rewardType: "coins" },
+        { id: "q19", name: "Конгломерат", desc: "150 зданий одного типа", icon: "🏰", condition: (s) => s.buildings.some(b => b.count >= 150), reward: 200000000, rewardType: "coins" },
+        { id: "q20", name: "Монополия", desc: "300 зданий одного типа", icon: "🌍", condition: (s) => s.buildings.some(b => b.count >= 300), reward: 1e9, rewardType: "coins" },
+        { id: "q21", name: "Глобал", desc: "500 зданий одного типа", icon: "🌎", condition: (s) => s.buildings.some(b => b.count >= 500), reward: 5e9, rewardType: "coins" },
+        { id: "q22", name: "Космос", desc: "750 зданий одного типа", icon: "🚀", condition: (s) => s.buildings.some(b => b.count >= 750), reward: 2e10, rewardType: "coins" },
+        { id: "q23", name: "Бесконечность", desc: "1000 зданий одного типа", icon: "∞", condition: (s) => s.buildings.some(b => b.count >= 1000), reward: 1e11, rewardType: "coins" },
+        { id: "q24", name: "Перерождение", desc: "1 престиж", icon: "🌟", condition: (s) => s.prestigeLevel >= 1, reward: 1, rewardType: "prestige" },
+        { id: "q25", name: "Ветеран", desc: "3 престижа", icon: "🌠", condition: (s) => s.prestigeLevel >= 3, reward: 3, rewardType: "prestige" },
+        { id: "q26", name: "Мега-рождение", desc: "1 мега-престиж", icon: "🔥", condition: (s) => s.megaPrestigeLevel >= 1, reward: 5, rewardType: "prestige" },
+        { id: "q27", name: "Гипер-рождение", desc: "1 гипер-престиж", icon: "🌈", condition: (s) => s.hyperPrestigeLevel >= 1, reward: 10, rewardType: "prestige" },
+        { id: "q28", name: "Империя", desc: "Все типы зданий", icon: "👑", condition: (s) => s.buildings.every(b => b.count > 0), reward: 100000, rewardType: "coins" },
+        { id: "q29", name: "Мастер всего", desc: "Выполнить 28 квестов", icon: "🏆", condition: (s) => s.quests.filter(q => q.completed).length >= 28, reward: 1.5, rewardType: "global_multiplier" }
     ];
 
+    // ПЕРЕБАЛАНСИРОВАННЫЕ СОБЫТИЯ
     const EVENTS = [
-        { id: "coin_rain", name: "Золотой дождь", desc: "x3 к доходу на 30 сек!", icon: "🌧️", duration: 30, multiplier: 3, color: "#f59e0b" },
-        { id: "frenzy", name: "Монетное безумие", desc: "x7 к кликам на 15 сек!", icon: "🌀", duration: 15, clickMult: 7, color: "#8b5cf6" },
-        { id: "lucky_day", name: "Счастливый день", desc: "x5 ко всему на 20 сек!", icon: "🍀", duration: 20, multiplier: 5, color: "#10b981" },
-        { id: "time_boost", name: "Ускорение времени", desc: "x10 к доходу на 10 сек!", icon: "⚡", duration: 10, cpsMult: 10, color: "#06b6d4" }
+        { id: "coin_rain", name: "Золотой дождь", desc: "x1.5 к доходу на 30 сек!", icon: "🌧️", duration: 30, multiplier: 1.5, color: "#f59e0b" },
+        { id: "frenzy", name: "Монетное безумие", desc: "x2.0 к кликам на 15 сек!", icon: "🌀", duration: 15, clickMult: 2.0, color: "#8b5cf6" },
+        { id: "lucky_day", name: "Счастливый день", desc: "x3.0 ко всему на 15 сек!", icon: "🍀", duration: 15, multiplier: 3.0, color: "#10b981" },
+        { id: "time_boost", name: "Ускорение времени", desc: "x5.0 к доходу на 10 сек!", icon: "⚡", duration: 10, cpsMult: 5.0, color: "#06b6d4" }
     ];
 
     const BANK_DEPOSITS = [
@@ -166,7 +197,6 @@
     let gameState = {
         coins: 0, totalCoins: 0, totalClicks: 0,
         prestigeLevel: 0, megaPrestigeLevel: 0, hyperPrestigeLevel: 0,
-        prestigeMultiplier: 1, megaPrestigeMultiplier: 1, hyperPrestigeMultiplier: 1,
         prestigePoints: 0, totalPrestigePoints: 0,
         nickname: "",
         upgrades: UPGRADES.map(u => ({ id: u.id, level: 0 })),
@@ -175,34 +205,75 @@
         quests: QUESTS.map(q => ({ id: q.id, completed: false, claimed: false })),
         bankBalance: 0, bankDeposits: [],
         activeEvent: null, eventEndsAt: 0,
-        eventMultiplier: 1, eventClickMult: 1, eventCpsMult: 1
+        eventMultiplier: 1, eventClickMult: 1, eventCpsMult: 1,
+        globalQuestMultiplier: 1
     };
 
-    let leaderboard = [];
+    let leaderboard = { prestige: [], mega: [], hyper: [], coins: [] };
     let saveTimeout = null;
+    let currentLeaderboardTab = "prestige";
 
+    // Функции лидеров
     function loadLeaderboard() {
-        try { const saved = localStorage.getItem(LEADERBOARD_KEY); if (saved) leaderboard = JSON.parse(saved); } catch(e) {}
+        try { 
+            const saved = localStorage.getItem(LEADERBOARD_KEY); 
+            if (saved) leaderboard = JSON.parse(saved); 
+            else leaderboard = { prestige: [], mega: [], hyper: [], coins: [] };
+        } catch(e) { leaderboard = { prestige: [], mega: [], hyper: [], coins: [] }; }
     }
 
     function saveLeaderboard() {
         if (!gameState.nickname) return;
-        const existingIndex = leaderboard.findIndex(entry => entry.name === gameState.nickname);
+        
         const entry = {
-            name: gameState.nickname, coins: gameState.coins, totalCoins: gameState.totalCoins,
-            prestigeLevel: gameState.prestigeLevel, megaPrestigeLevel: gameState.megaPrestigeLevel,
-            hyperPrestigeLevel: gameState.hyperPrestigeLevel,
-            totalMultiplier: gameState.prestigeMultiplier * gameState.megaPrestigeMultiplier * gameState.hyperPrestigeMultiplier
+            name: gameState.nickname,
+            value: gameState.prestigeLevel,
+            timestamp: Date.now()
         };
-        if (existingIndex >= 0) leaderboard[existingIndex] = entry;
-        else leaderboard.push(entry);
-        leaderboard.sort((a, b) => {
-            if (b.hyperPrestigeLevel !== a.hyperPrestigeLevel) return b.hyperPrestigeLevel - a.hyperPrestigeLevel;
-            if (b.megaPrestigeLevel !== a.megaPrestigeLevel) return b.megaPrestigeLevel - a.megaPrestigeLevel;
-            if (b.prestigeLevel !== a.prestigeLevel) return b.prestigeLevel - a.prestigeLevel;
-            return b.totalCoins - a.totalCoins;
-        });
-        localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard.slice(0, 100)));
+        let prestigeBoard = [...leaderboard.prestige];
+        const existingP = prestigeBoard.findIndex(e => e.name === gameState.nickname);
+        if (existingP >= 0) prestigeBoard[existingP] = entry;
+        else prestigeBoard.push(entry);
+        prestigeBoard.sort((a, b) => b.value - a.value);
+        leaderboard.prestige = prestigeBoard.slice(0, 20);
+
+        const megaEntry = {
+            name: gameState.nickname,
+            value: gameState.megaPrestigeLevel,
+            timestamp: Date.now()
+        };
+        let megaBoard = [...leaderboard.mega];
+        const existingM = megaBoard.findIndex(e => e.name === gameState.nickname);
+        if (existingM >= 0) megaBoard[existingM] = megaEntry;
+        else megaBoard.push(megaEntry);
+        megaBoard.sort((a, b) => b.value - a.value);
+        leaderboard.mega = megaBoard.slice(0, 20);
+
+        const hyperEntry = {
+            name: gameState.nickname,
+            value: gameState.hyperPrestigeLevel,
+            timestamp: Date.now()
+        };
+        let hyperBoard = [...leaderboard.hyper];
+        const existingH = hyperBoard.findIndex(e => e.name === gameState.nickname);
+        if (existingH >= 0) hyperBoard[existingH] = hyperEntry;
+        else hyperBoard.push(hyperEntry);
+        hyperBoard.sort((a, b) => b.value - a.value);
+        leaderboard.hyper = hyperBoard.slice(0, 20);
+
+        const coinsEntry = {
+            name: gameState.nickname,
+            value: gameState.coins,
+            timestamp: Date.now()
+        };
+        let coinsBoard = [...leaderboard.coins];
+        const existingC = coinsBoard.findIndex(e => e.name === gameState.nickname);
+        if (existingC >= 0) coinsBoard[existingC] = coinsEntry;
+        else coinsBoard.push(coinsEntry);
+        coinsBoard.sort((a, b) => b.value - a.value);
+        leaderboard.coins = coinsBoard.slice(0, 20);
+        
+        localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard));
     }
 
     function setNickname(name) {
@@ -218,12 +289,11 @@
         const saveData = {
             coins: gameState.coins, totalCoins: gameState.totalCoins, totalClicks: gameState.totalClicks,
             prestigeLevel: gameState.prestigeLevel, megaPrestigeLevel: gameState.megaPrestigeLevel,
-            hyperPrestigeLevel: gameState.hyperPrestigeLevel, prestigeMultiplier: gameState.prestigeMultiplier,
-            megaPrestigeMultiplier: gameState.megaPrestigeMultiplier, hyperPrestigeMultiplier: gameState.hyperPrestigeMultiplier,
+            hyperPrestigeLevel: gameState.hyperPrestigeLevel,
             prestigePoints: gameState.prestigePoints, totalPrestigePoints: gameState.totalPrestigePoints,
             nickname: gameState.nickname, upgrades: gameState.upgrades, buildings: gameState.buildings,
             relics: gameState.relics, quests: gameState.quests, bankBalance: gameState.bankBalance,
-            bankDeposits: gameState.bankDeposits
+            bankDeposits: gameState.bankDeposits, globalQuestMultiplier: gameState.globalQuestMultiplier
         };
         tg.CloudStorage.setItem(CLOUD_SAVE_KEY, JSON.stringify(saveData), (err) => {});
     }
@@ -237,15 +307,17 @@
                 gameState.coins = cloudData.coins || 0; gameState.totalCoins = cloudData.totalCoins || 0;
                 gameState.totalClicks = cloudData.totalClicks || 0; gameState.prestigeLevel = cloudData.prestigeLevel || 0;
                 gameState.megaPrestigeLevel = cloudData.megaPrestigeLevel || 0; gameState.hyperPrestigeLevel = cloudData.hyperPrestigeLevel || 0;
-                gameState.prestigeMultiplier = cloudData.prestigeMultiplier || 1; gameState.megaPrestigeMultiplier = cloudData.megaPrestigeMultiplier || 1;
-                gameState.hyperPrestigeMultiplier = cloudData.hyperPrestigeMultiplier || 1;
                 gameState.prestigePoints = cloudData.prestigePoints || 0; gameState.totalPrestigePoints = cloudData.totalPrestigePoints || 0;
                 gameState.nickname = cloudData.nickname || ""; gameState.bankBalance = cloudData.bankBalance || 0;
                 gameState.bankDeposits = cloudData.bankDeposits || [];
+                gameState.globalQuestMultiplier = cloudData.globalQuestMultiplier || 1;
                 if (cloudData.upgrades) gameState.upgrades = UPGRADES.map(u => cloudData.upgrades?.find(x => x.id === u.id) || { id: u.id, level: 0 });
                 if (cloudData.buildings) gameState.buildings = BUILDINGS.map(b => cloudData.buildings?.find(x => x.id === b.id) || { id: b.id, count: 0 });
                 if (cloudData.relics) gameState.relics = RELICS.map(r => cloudData.relics?.find(x => x.id === r.id) || { id: r.id, owned: false });
-                if (cloudData.quests) gameState.quests = QUESTS.map(q => cloudData.quests?.find(x => x.id === q.id) || { id: q.id, completed: false, claimed: false });
+                if (cloudData.quests) gameState.quests = QUESTS.map(q => {
+                    const found = cloudData.quests?.find(x => x.id === q.id);
+                    return found || { id: q.id, completed: false, claimed: false };
+                });
                 saveLeaderboard(); updateUI(); checkQuests();
             } catch(e) {}
         });
@@ -254,6 +326,19 @@
     function autoSaveToCloud() {
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => { saveToCloud(); saveLeaderboard(); }, 1000);
+    }
+
+    // НОВАЯ ФОРМУЛА МНОЖИТЕЛЕЙ (СКЛАДЫВАЮТСЯ)
+    function getPrestigeMultiplier() {
+        return 1 + gameState.prestigeLevel * 0.5;
+    }
+    
+    function getMegaPrestigeMultiplier() {
+        return 1 + gameState.megaPrestigeLevel * 2;
+    }
+    
+    function getHyperPrestigeMultiplier() {
+        return 1 + gameState.hyperPrestigeLevel * 5;
     }
 
     function getRelicMult(type) {
@@ -272,7 +357,7 @@
         gameState.upgrades.forEach(u => { const def = UPGRADES.find(x => x.id === u.id); if (def) bonus += (def.cpc || 0) * u.level; });
         const base = 1 + bonus;
         const relicMult = getRelicMult("cpc");
-        let mult = gameState.prestigeMultiplier * gameState.megaPrestigeMultiplier * gameState.hyperPrestigeMultiplier * relicMult;
+        let mult = getPrestigeMultiplier() * getMegaPrestigeMultiplier() * getHyperPrestigeMultiplier() * relicMult * gameState.globalQuestMultiplier;
         if (gameState.activeEvent && gameState.eventClickMult > 1) mult *= gameState.eventClickMult;
         return Math.floor(base * mult);
     }
@@ -282,13 +367,15 @@
         gameState.upgrades.forEach(u => { const def = UPGRADES.find(x => x.id === u.id); if (def && def.cps) fromUps += def.cps * u.level; });
         gameState.buildings.forEach(b => { const def = BUILDINGS.find(x => x.id === b.id); if (def) fromBlds += def.cps * b.count; });
         const relicMult = getRelicMult("cps");
-        let mult = gameState.prestigeMultiplier * gameState.megaPrestigeMultiplier * gameState.hyperPrestigeMultiplier * relicMult;
+        let mult = getPrestigeMultiplier() * getMegaPrestigeMultiplier() * getHyperPrestigeMultiplier() * relicMult * gameState.globalQuestMultiplier;
         if (gameState.activeEvent && gameState.eventMultiplier > 1) mult *= gameState.eventMultiplier;
         if (gameState.activeEvent && gameState.eventCpsMult > 1) mult *= gameState.eventCpsMult;
         return Math.floor((fromUps + fromBlds) * mult);
     }
 
-    function getTotalMultiplier() { return gameState.prestigeMultiplier * gameState.megaPrestigeMultiplier * gameState.hyperPrestigeMultiplier; }
+    function getTotalMultiplier() { 
+        return getPrestigeMultiplier() * getMegaPrestigeMultiplier() * getHyperPrestigeMultiplier() * gameState.globalQuestMultiplier; 
+    }
 
     function formatNumber(n) {
         if (typeof n !== 'number' || isNaN(n)) n = 0;
@@ -351,33 +438,43 @@
         updateUI(); autoSaveToCloud();
     }
 
+    // НОВЫЕ ПРЕСТИЖИ (НЕ ОБНУЛЯЮТ ДРУГ ДРУГА)
     function doPrestige() {
         if (gameState.coins < PRESTIGE_REQ) return;
+        gameState.bankDeposits = []; // БАНК ОБНУЛЯЕТСЯ
         const pts = Math.floor(Math.log10(gameState.coins / PRESTIGE_REQ) * 3 + 1);
-        gameState.prestigeLevel++; gameState.prestigeMultiplier = 1 + gameState.prestigeLevel * 0.5;
-        gameState.prestigePoints += pts; gameState.totalPrestigePoints += pts;
-        gameState.coins = 0; gameState.upgrades.forEach(u => u.level = 0); gameState.buildings.forEach(b => b.count = 0);
+        gameState.prestigeLevel++;
+        gameState.prestigePoints += pts;
+        gameState.totalPrestigePoints += pts;
+        gameState.coins = 0;
+        gameState.upgrades.forEach(u => u.level = 0);
+        gameState.buildings.forEach(b => b.count = 0);
         updateUI(); autoSaveToCloud(); checkQuests();
     }
 
     function doMegaPrestige() {
         if (gameState.coins < MEGA_PRESTIGE_REQ) return;
+        gameState.bankDeposits = []; // БАНК ОБНУЛЯЕТСЯ
         const pts = Math.floor(Math.log10(gameState.coins / MEGA_PRESTIGE_REQ) * 5 + 5);
-        gameState.megaPrestigeLevel++; gameState.megaPrestigeMultiplier = 1 + gameState.megaPrestigeLevel * 2;
-        gameState.prestigePoints += pts; gameState.totalPrestigePoints += pts;
-        gameState.coins = 0; gameState.prestigeLevel = 0; gameState.prestigeMultiplier = 1;
-        gameState.upgrades.forEach(u => u.level = 0); gameState.buildings.forEach(b => b.count = 0);
+        gameState.megaPrestigeLevel++;
+        gameState.prestigePoints += pts;
+        gameState.totalPrestigePoints += pts;
+        gameState.coins = 0;
+        gameState.upgrades.forEach(u => u.level = 0);
+        gameState.buildings.forEach(b => b.count = 0);
         updateUI(); autoSaveToCloud();
     }
 
     function doHyperPrestige() {
         if (gameState.coins < HYPER_PRESTIGE_REQ) return;
+        gameState.bankDeposits = []; // БАНК ОБНУЛЯЕТСЯ
         const pts = Math.floor(Math.log10(gameState.coins / HYPER_PRESTIGE_REQ) * 10 + 20);
-        gameState.hyperPrestigeLevel++; gameState.hyperPrestigeMultiplier = 1 + gameState.hyperPrestigeLevel * 5;
-        gameState.prestigePoints += pts; gameState.totalPrestigePoints += pts;
-        gameState.coins = 0; gameState.prestigeLevel = 0; gameState.megaPrestigeLevel = 0;
-        gameState.prestigeMultiplier = 1; gameState.megaPrestigeMultiplier = 1;
-        gameState.upgrades.forEach(u => u.level = 0); gameState.buildings.forEach(b => b.count = 0);
+        gameState.hyperPrestigeLevel++;
+        gameState.prestigePoints += pts;
+        gameState.totalPrestigePoints += pts;
+        gameState.coins = 0;
+        gameState.upgrades.forEach(u => u.level = 0);
+        gameState.buildings.forEach(b => b.count = 0);
         updateUI(); autoSaveToCloud();
     }
 
@@ -386,8 +483,15 @@
         const def = QUESTS.find(x => x.id === id);
         if (!q || !q.completed || q.claimed) return;
         q.claimed = true;
-        if (def.rewardType === "coins") { gameState.coins += def.reward; gameState.totalCoins += def.reward; }
-        else if (def.rewardType === "prestige") { gameState.prestigePoints += def.reward; gameState.totalPrestigePoints += def.reward; }
+        if (def.rewardType === "coins") { 
+            gameState.coins += def.reward; 
+            gameState.totalCoins += def.reward; 
+        } else if (def.rewardType === "prestige") { 
+            gameState.prestigePoints += def.reward; 
+            gameState.totalPrestigePoints += def.reward; 
+        } else if (def.rewardType === "global_multiplier") {
+            gameState.globalQuestMultiplier *= def.reward;
+        }
         updateUI(); autoSaveToCloud();
     }
 
@@ -396,7 +500,10 @@
         gameState.quests.forEach(q => {
             if (q.completed) return;
             const def = QUESTS.find(x => x.id === q.id);
-            if (def && def.condition(gameState)) { q.completed = true; changed = true; }
+            if (def && def.condition(gameState)) { 
+                q.completed = true; 
+                changed = true; 
+            }
         });
         if (changed) { updateUI(); autoSaveToCloud(); }
     }
@@ -422,10 +529,19 @@
         const remaining = [];
         gameState.bankDeposits.forEach(dep => {
             const elapsed = (now - dep.startTime) / 60000;
-            if (elapsed >= dep.duration) { newBalance += dep.amount * (1 + dep.interest / 100); changed = true; }
-            else { remaining.push(dep); }
+            if (elapsed >= dep.duration) { 
+                newBalance += dep.amount * (1 + dep.interest / 100); 
+                changed = true; 
+            } else { 
+                remaining.push(dep); 
+            }
         });
-        if (changed) { gameState.bankBalance = newBalance; gameState.bankDeposits = remaining; autoSaveToCloud(); updateUI(); }
+        if (changed) { 
+            gameState.bankBalance = newBalance; 
+            gameState.bankDeposits = remaining; 
+            autoSaveToCloud(); 
+            updateUI(); 
+        }
     }
 
     function checkEvent() {
@@ -462,7 +578,12 @@
         if (delta >= 0.05) {
             const cps = calcCPS();
             const earned = cps * delta;
-            if (earned > 0) { gameState.coins += earned; gameState.totalCoins += earned; updateUI(); autoSaveToCloud(); }
+            if (earned > 0) { 
+                gameState.coins += earned; 
+                gameState.totalCoins += earned; 
+                updateUI(); 
+                autoSaveToCloud(); 
+            }
             lastTick = now;
         }
         requestAnimationFrame(passiveIncome);
@@ -474,7 +595,7 @@
         document.getElementById("coins").innerText = formatNumber(gameState.coins);
         document.getElementById("cpc").innerText = formatNumber(calcCPC());
         document.getElementById("cps").innerText = formatNumber(calcCPS());
-        document.getElementById("totalMultiplier").innerHTML = `📊 Общий множитель: x${getTotalMultiplier().toFixed(2)} (⭐${gameState.prestigeLevel} × 🔥${gameState.megaPrestigeLevel} × 🌈${gameState.hyperPrestigeLevel})`;
+        document.getElementById("totalMultiplier").innerHTML = `📊 Общий множитель: x${getTotalMultiplier().toFixed(2)} (⭐${gameState.prestigeLevel} +${(gameState.prestigeLevel*0.5).toFixed(1)} 🔥${gameState.megaPrestigeLevel} +${(gameState.megaPrestigeLevel*2)} 🌈${gameState.hyperPrestigeLevel} +${(gameState.hyperPrestigeLevel*5)} ✨квест: x${gameState.globalQuestMultiplier})`;
         document.getElementById("prestigePoints").innerHTML = `✨ Очки престижа: ${gameState.prestigePoints} (всего: ${gameState.totalPrestigePoints})`;
         if (gameState.bankBalance > 0) document.getElementById("bankBalance").innerHTML = `🏦 В банке: ${formatNumber(gameState.bankBalance)}`;
         else document.getElementById("bankBalance").innerHTML = "";
@@ -484,17 +605,31 @@
 
     function renderLeaderboard() {
         loadLeaderboard();
-        let html = `<h2>🥇 Таблица лидеров</h2>`;
-        if (!leaderboard.length) html += `<div style="color:#92400e; text-align:center; padding:20px">Пока никого нет. Будь первым!</div>`;
-        else leaderboard.slice(0, 20).forEach((entry, i) => {
+        let board = leaderboard[currentLeaderboardTab] || [];
+        let title = "";
+        if (currentLeaderboardTab === "prestige") title = "⭐ Топ по престижам";
+        else if (currentLeaderboardTab === "mega") title = "🔥 Топ по мега-престижам";
+        else if (currentLeaderboardTab === "hyper") title = "🌈 Топ по гипер-престижам";
+        else title = "💰 Топ по балансу";
+        
+        let html = `<div class="leaderboard-select">
+            <button class="leaderboard-select-btn ${currentLeaderboardTab === 'prestige' ? 'active' : ''}" data-lb="prestige">⭐ Престижи</button>
+            <button class="leaderboard-select-btn ${currentLeaderboardTab === 'mega' ? 'active' : ''}" data-lb="mega">🔥 Мега</button>
+            <button class="leaderboard-select-btn ${currentLeaderboardTab === 'hyper' ? 'active' : ''}" data-lb="hyper">🌈 Гипер</button>
+            <button class="leaderboard-select-btn ${currentLeaderboardTab === 'coins' ? 'active' : ''}" data-lb="coins">💰 Баланс</button>
+        </div><h2>${title}</h2>`;
+        
+        if (!board.length) html += `<div style="color:#92400e; text-align:center; padding:20px">Пока никого нет. Будь первым!</div>`;
+        else board.slice(0, 20).forEach((entry, i) => {
             const medals = ["🥇", "🥈", "🥉"]; const rank = i < 3 ? medals[i] : `#${i+1}`; const isMe = entry.name === gameState.nickname;
+            let displayValue = entry.value;
+            if (currentLeaderboardTab === "coins") displayValue = formatNumber(entry.value);
             html += `<div class="leaderboard-entry" style="${isMe ? 'border:1px solid #fbbf24' : ''}">
                         <div class="leaderboard-rank">${rank}</div>
                         <div class="leaderboard-name">${entry.name}${isMe ? ' 👈' : ''}</div>
-                        <div class="leaderboard-value">⭐${entry.prestigeLevel} 🔥${entry.megaPrestigeLevel} 🌈${entry.hyperPrestigeLevel}</div>
+                        <div class="leaderboard-value">${displayValue}</div>
                     </div>`;
         });
-        html += `<div style="margin-top:12px; font-size:11px; color:#92400e">🏆 Сортировка: гипер > мега > престиж > монеты</div>`;
         return html;
     }
 
@@ -520,22 +655,27 @@
             const megaProgress = Math.min((gameState.coins / MEGA_PRESTIGE_REQ) * 100, 100);
             const hyperProgress = Math.min((gameState.coins / HYPER_PRESTIGE_REQ) * 100, 100);
             container.innerHTML = `<h2>🌟 Система перерождений</h2>
-                <div class="prestige-card"><div style="display:flex; justify-content:space-between"><span>⭐ Престиж: ${gameState.prestigeLevel}</span><span>✨ Множитель: x${gameState.prestigeMultiplier.toFixed(1)}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${prestigeProgress}%"></div></div><div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(PRESTIGE_REQ)}</div><button class="buy-btn" onclick="doPrestige()" ${gameState.coins < PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">✨ Обычный престиж</button></div>
-                <div class="prestige-card"><div style="display:flex; justify-content:space-between"><span>🔥 Мега-престиж: ${gameState.megaPrestigeLevel}</span><span>Множитель: x${gameState.megaPrestigeMultiplier.toFixed(1)}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${megaProgress}%"></div></div><div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(MEGA_PRESTIGE_REQ)} (1 млрд)</div><button class="buy-btn" onclick="doMegaPrestige()" ${gameState.coins < MEGA_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🔥 Мега-престиж</button></div>
-                <div class="prestige-card"><div style="display:flex; justify-content:space-between"><span>🌈 Гипер-престиж: ${gameState.hyperPrestigeLevel}</span><span>Множитель: x${gameState.hyperPrestigeMultiplier.toFixed(1)}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${hyperProgress}%"></div></div><div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(HYPER_PRESTIGE_REQ)} (1 трлн)</div><button class="buy-btn" onclick="doHyperPrestige()" ${gameState.coins < HYPER_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🌈 Гипер-престиж</button></div>`;
+                <div class="prestige-card"><div style="display:flex; justify-content:space-between"><span>⭐ Престиж: ${gameState.prestigeLevel} (x${getPrestigeMultiplier().toFixed(1)})</span></div><div class="progress-bar"><div class="progress-fill" style="width:${prestigeProgress}%"></div></div><div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(PRESTIGE_REQ)}</div><button class="buy-btn" onclick="doPrestige()" ${gameState.coins < PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">✨ Обычный престиж (+${(gameState.prestigeLevel+1)*0.5} к множителю)</button></div>
+                <div class="prestige-card"><div style="display:flex; justify-content:space-between"><span>🔥 Мега-престиж: ${gameState.megaPrestigeLevel} (x${getMegaPrestigeMultiplier().toFixed(1)})</span></div><div class="progress-bar"><div class="progress-fill" style="width:${megaProgress}%"></div></div><div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(MEGA_PRESTIGE_REQ)} (1 млрд)</div><button class="buy-btn" onclick="doMegaPrestige()" ${gameState.coins < MEGA_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🔥 Мега-престиж (+${(gameState.megaPrestigeLevel+1)*2} к множителю)</button></div>
+                <div class="prestige-card"><div style="display:flex; justify-content:space-between"><span>🌈 Гипер-престиж: ${gameState.hyperPrestigeLevel} (x${getHyperPrestigeMultiplier().toFixed(1)})</span></div><div class="progress-bar"><div class="progress-fill" style="width:${hyperProgress}%"></div></div><div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(HYPER_PRESTIGE_REQ)} (1 трлн)</div><button class="buy-btn" onclick="doHyperPrestige()" ${gameState.coins < HYPER_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🌈 Гипер-престиж (+${(gameState.hyperPrestigeLevel+1)*5} к множителю)</button></div>
+                <div class="prestige-card"><div style="font-size:12px; color:#a78bfa">⚡ Важно: престижи не обнуляют друг друга! Можно качать все три вида одновременно.</div></div>`;
         } else if (tab === "relics") {
             container.innerHTML = `<h2>💎 Реликвии</h2><div style="display:flex; flex-wrap:wrap">`;
             RELICS.forEach(r => { const owned = gameState.relics.find(x => x.id === r.id)?.owned;
-                container.innerHTML += `<div class="relic-item"><div style="font-size:32px">${r.icon}</div><div style="font-weight:700">${r.name}</div><div style="font-size:10px; color:#92400e">${r.type === 'multiplier' ? 'x' + r.value : '+' + Math.round((r.value-1)*100) + '%'}</div><button class="buy-btn" onclick="buyRelic('${r.id}')" ${owned || gameState.prestigePoints < r.cost ? 'disabled' : ''} style="margin-top:5px">${owned ? '✅ Получено' : `✨ ${r.cost} очков`}</button></div>`;
+                container.innerHTML += `<div class="relic-item"><div style="font-size:32px">${r.icon}</div><div style="font-weight:700">${r.name}</div><div style="font-size:10px; color:#92400e">${r.type === 'multiplier' ? 'x' + r.value : (r.type === 'cpc' ? '+' + Math.round((r.value-1)*100) + '% к клику' : '+' + Math.round((r.value-1)*100) + '% к доходу')}</div><button class="buy-btn" onclick="buyRelic('${r.id}')" ${owned || gameState.prestigePoints < r.cost ? 'disabled' : ''} style="margin-top:5px">${owned ? '✅ Получено' : `✨ ${r.cost} очков`}</button></div>`;
             });
             container.innerHTML += `</div><div style="margin-top:12px; font-size:11px; color:#92400e">⭐ Реликвии покупаются за очки престижа и не сбрасываются</div>`;
         } else if (tab === "quests") {
-            container.innerHTML = `<h2>📜 Квесты</h2>`;
+            container.innerHTML = `<h2>📜 Квесты ${gameState.globalQuestMultiplier > 1 ? `(✨ x${gameState.globalQuestMultiplier} ко всему!)` : ''}</h2>`;
             QUESTS.forEach(qDef => { const q = gameState.quests.find(x => x.id === qDef.id); const completed = q?.completed; const claimed = q?.claimed;
-                container.innerHTML += `<div class="quest-item"><div style="display:flex; align-items:center; gap:8px"><span style="font-size:24px">${qDef.icon}</span><div style="flex:1"><div style="font-weight:700">${qDef.name}</div><div style="font-size:11px; color:#92400e">${qDef.desc}</div><div style="font-size:10px; color:#6ee7b7">Награда: ${qDef.rewardType === 'coins' ? formatNumber(qDef.reward) + ' монет' : qDef.reward + ' очков престижа'}</div></div><button class="buy-btn" onclick="claimQuest('${qDef.id}')" ${!completed || claimed ? 'disabled' : ''}>${claimed ? '✅ Забрано' : completed ? '🎁 Забрать' : '🔒 Закрыт'}</button></div></div>`;
+                let rewardText = "";
+                if (qDef.rewardType === "coins") rewardText = `${formatNumber(qDef.reward)} монет`;
+                else if (qDef.rewardType === "prestige") rewardText = `${qDef.reward} очков престижа`;
+                else rewardText = `x${qDef.reward} к общему множителю!`;
+                container.innerHTML += `<div class="quest-item"><div style="display:flex; align-items:center; gap:8px"><span style="font-size:24px">${qDef.icon}</span><div style="flex:1"><div style="font-weight:700">${qDef.name}</div><div style="font-size:11px; color:#92400e">${qDef.desc}</div><div style="font-size:10px; color:#6ee7b7">Награда: ${rewardText}</div></div><button class="buy-btn" onclick="claimQuest('${qDef.id}')" ${!completed || claimed ? 'disabled' : ''}>${claimed ? '✅ Забрано' : completed ? '🎁 Забрать' : '🔒 Закрыт'}</button></div></div>`;
             });
         } else if (tab === "bank") {
-            container.innerHTML = `<h2>🏦 Банк</h2><div class="bank-deposit"><div style="font-size:20px">💰 ${formatNumber(gameState.bankBalance)}</div><div style="font-size:12px">Готово к снятию</div><button class="buy-btn" onclick="withdrawBank()" ${gameState.bankBalance <= 0 ? 'disabled' : ''} style="margin-top:8px">💵 Снять всё</button></div><h2 style="margin-top:12px">📥 Вклады</h2><div id="depositsList"></div>`;
+            container.innerHTML = `<h2>🏦 Банк</h2><div class="bank-deposit"><div style="font-size:20px">💰 ${formatNumber(gameState.bankBalance)}</div><div style="font-size:12px">Готово к снятию</div><button class="buy-btn" onclick="withdrawBank()" ${gameState.bankBalance <= 0 ? 'disabled' : ''} style="margin-top:8px">💵 Снять всё</button></div><h2 style="margin-top:12px">📥 Вклады</h2><div id="depositsList"></div><div style="margin-top:12px; font-size:11px; color:#ffaa66">⚠️ ВНИМАНИЕ: При любом перерождении активные вклады пропадают!</div>`;
             const depositsDiv = document.getElementById("depositsList");
             if (depositsDiv) { depositsDiv.innerHTML = ""; BANK_DEPOSITS.forEach((dep, i) => { depositsDiv.innerHTML += `<button onclick="depositPrompt(${i})" style="background:#b45309; border:none; border-radius:8px; padding:8px; margin:4px; color:white">${dep.label} +${dep.interest}%</button>`; }); }
             if (gameState.bankDeposits.length > 0) { container.innerHTML += `<h2 style="margin-top:12px">📊 Активные</h2>`; gameState.bankDeposits.forEach(dep => { const elapsed = (Date.now() - dep.startTime) / 60000; const progress = Math.min((elapsed / dep.duration) * 100, 100);
@@ -548,8 +688,15 @@
             } else { container.innerHTML += `<div style="color:#92400e">События появляются случайно во время игры. Следи за баннером!</div>`; }
             container.innerHTML += `<h2 style="margin-top:12px">📋 Список событий</h2>`;
             EVENTS.forEach(ev => { container.innerHTML += `<div class="item" style="background:${ev.color}11; border-color:${ev.color}33"><div class="item-icon">${ev.icon}</div><div class="item-info"><div class="item-name">${ev.name}</div><div class="item-desc">${ev.desc}</div></div></div>`; });
-        } else if (tab === "leaderboard") { container.innerHTML = renderLeaderboard(); }
-        else if (tab === "stats") {
+        } else if (tab === "leaderboard") { 
+            container.innerHTML = renderLeaderboard(); 
+            document.querySelectorAll(".leaderboard-select-btn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    currentLeaderboardTab = btn.getAttribute("data-lb");
+                    renderTab("leaderboard");
+                });
+            });
+        } else if (tab === "stats") {
             const cpc = calcCPC(); const cps = calcCPS();
             container.innerHTML = `<h2>📊 Статистика</h2>
                 <div class="item"><div class="item-info"><div class="item-name">💰 Монет сейчас</div></div><div>${formatNumber(gameState.coins)}</div></div>
@@ -557,12 +704,13 @@
                 <div class="item"><div class="item-info"><div class="item-name">🖱️ Кликов</div></div><div>${formatNumber(gameState.totalClicks)}</div></div>
                 <div class="item"><div class="item-info"><div class="item-name">👆 За клик</div></div><div>+${formatNumber(cpc)}</div></div>
                 <div class="item"><div class="item-info"><div class="item-name">⚡ В секунду</div></div><div>+${formatNumber(cps)}</div></div>
-                <div class="item"><div class="item-info"><div class="item-name">⭐ Престиж</div></div><div>${gameState.prestigeLevel} (x${gameState.prestigeMultiplier.toFixed(1)})</div></div>
-                <div class="item"><div class="item-info"><div class="item-name">🔥 Мега-престиж</div></div><div>${gameState.megaPrestigeLevel} (x${gameState.megaPrestigeMultiplier.toFixed(1)})</div></div>
-                <div class="item"><div class="item-info"><div class="item-name">🌈 Гипер-престиж</div></div><div>${gameState.hyperPrestigeLevel} (x${gameState.hyperPrestigeMultiplier.toFixed(1)})</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">⭐ Престиж</div></div><div>${gameState.prestigeLevel} (x${getPrestigeMultiplier().toFixed(1)})</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">🔥 Мега-престиж</div></div><div>${gameState.megaPrestigeLevel} (x${getMegaPrestigeMultiplier().toFixed(1)})</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">🌈 Гипер-престиж</div></div><div>${gameState.hyperPrestigeLevel} (x${getHyperPrestigeMultiplier().toFixed(1)})</div></div>
                 <div class="item"><div class="item-info"><div class="item-name">📊 Общий множитель</div></div><div>x${getTotalMultiplier().toFixed(2)}</div></div>
                 <div class="item"><div class="item-info"><div class="item-name">✨ Очки престижа</div></div><div>${gameState.prestigePoints}</div></div>
-                <div class="item"><div class="item-info"><div class="item-name">🎖️ Всего очков</div></div><div>${gameState.totalPrestigePoints}</div></div>`;
+                <div class="item"><div class="item-info"><div class="item-name">🎖️ Всего очков</div></div><div>${gameState.totalPrestigePoints}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">✨ Квест-множитель</div></div><div>x${gameState.globalQuestMultiplier}</div></div>`;
         }
     }
 
