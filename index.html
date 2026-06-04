@@ -2,1488 +2,771 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>МонетоКликер — Telegram Mini App</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>МонетоКликер — Полная версия</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background: #0a0500;
-            overflow-x: hidden;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.03; }
-            100% { opacity: 0.12; }
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(60px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes coinPop {
-            0% { opacity: 1; transform: translate(-50%,-50%) scale(1.4); }
-            100% { opacity: 0; transform: translate(-50%,-180%) scale(0.7); }
-        }
-
-        @keyframes ripple {
-            0% { width: 0; height: 0; opacity: 0.7; }
-            100% { width: 200px; height: 200px; opacity: 0; }
-        }
-
-        @keyframes glowPulse {
-            0%, 100% { box-shadow: 0 0 30px rgba(251,191,36,0.3); }
-            50% { box-shadow: 0 0 60px rgba(251,191,36,0.7); }
-        }
-
-        .custom-scroll::-webkit-scrollbar {
-            width: 5px;
-        }
-
-        .custom-scroll::-webkit-scrollbar-track {
-            background: rgba(120,53,15,0.1);
-            border-radius: 3px;
-        }
-
-        .custom-scroll::-webkit-scrollbar-thumb {
-            background: rgba(251,191,36,0.3);
-            border-radius: 3px;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { background: linear-gradient(135deg, #0a0500 0%, #1a0800 100%); color: #fff; font-family: 'Segoe UI', sans-serif; padding: 16px; min-height: 100vh; }
+        .coin-card { background: linear-gradient(135deg, rgba(120,53,15,0.5), rgba(180,83,9,0.3)); border: 1px solid rgba(251,191,36,0.3); border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 16px; }
+        .coins { font-size: 42px; font-weight: 900; color: #fef3c7; text-shadow: 0 0 30px rgba(251,191,36,0.6); }
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+        .stat { background: rgba(120,53,15,0.4); border-radius: 10px; padding: 8px; }
+        .stat-label { color: #92400e; font-size: 10px; }
+        .stat-value { color: #fde68a; font-weight: 700; font-size: 13px; }
+        .coin-btn { width: 180px; height: 180px; margin: 20px auto; background: radial-gradient(circle at 35% 35%, #fbbf24aa, #f59e0b33); border: 3px solid #fbbf2488; border-radius: 50%; font-size: 70px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s; box-shadow: 0 0 40px rgba(251,191,36,0.3); }
+        .coin-btn:active { transform: scale(0.93); }
+        .tabs { display: flex; gap: 4px; background: rgba(120,53,15,0.2); border-radius: 14px; padding: 4px; overflow-x: auto; margin-bottom: 12px; }
+        .tab-btn { flex: 1; padding: 8px; border-radius: 10px; font-size: 12px; font-weight: bold; background: transparent; border: none; color: #a16207; cursor: pointer; }
+        .tab-btn.active { background: #b45309; color: white; }
+        .tab-content { background: rgba(120,53,15,0.15); border: 1px solid rgba(120,53,15,0.3); border-radius: 20px; padding: 16px; max-height: 450px; overflow-y: auto; }
+        .item { display: flex; align-items: center; gap: 12px; background: rgba(120,53,15,0.2); border: 1px solid rgba(120,53,15,0.3); border-radius: 14px; padding: 10px; margin-bottom: 8px; }
+        .item-icon { font-size: 28px; }
+        .item-info { flex: 1; }
+        .item-name { color: #fde68a; font-weight: 700; font-size: 13px; }
+        .item-desc { color: #92400e; font-size: 11px; }
+        .item-level { color: #6ee7b7; font-size: 10px; }
+        .buy-btn { background: #b45309; border: none; border-radius: 8px; padding: 5px 12px; color: white; font-weight: 700; font-size: 11px; cursor: pointer; }
+        .buy-btn:disabled { background: rgba(0,0,0,0.3); color: #6b7280; cursor: not-allowed; }
+        .prestige-card { background: rgba(91,33,182,0.3); border: 1px solid rgba(139,92,246,0.3); border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+        .relic-item { display: inline-block; background: rgba(120,53,15,0.2); border-radius: 12px; padding: 10px; margin: 5px; width: calc(33% - 10px); text-align: center; }
+        .quest-item { background: rgba(120,53,15,0.2); border-radius: 12px; padding: 10px; margin-bottom: 8px; }
+        .progress-bar { background: rgba(0,0,0,0.3); border-radius: 99px; height: 4px; margin-top: 4px; }
+        .progress-fill { height: 4px; border-radius: 99px; background: #f59e0b; width: 0%; }
+        h2 { color: #fbbf24; font-size: 16px; margin-bottom: 12px; }
+        .bank-deposit { background: rgba(6,78,59,0.3); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 12px; margin-bottom: 8px; }
+        .event-banner { position: fixed; top: 0; left: 0; right: 0; background: #f59e0b; color: #000; padding: 8px; text-align: center; font-weight: bold; z-index: 100; animation: slideDown 0.3s ease; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes coinPop { 0% { opacity: 1; transform: scale(1.4); } 100% { opacity: 0; transform: scale(0.7); } }
+        .particle { position: fixed; pointer-events: none; color: #fbbf24; font-weight: bold; font-size: 20px; z-index: 1000; animation: coinPop 0.5s ease-out forwards; }
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="importmap">
-        {
-            "imports": {
-                "react": "https://esm.sh/react@18.2.0",
-                "react-dom/client": "https://esm.sh/react-dom@18.2.0/client"
-            }
+<div id="game">
+    <div class="coin-card">
+        <div class="coins" id="coins">0</div>
+        <div class="stats">
+            <div class="stat"><div class="stat-label">👆 За клик</div><div class="stat-value" id="cpc">1</div></div>
+            <div class="stat"><div class="stat-label">⚡ В секунду</div><div class="stat-value" id="cps">0</div></div>
+        </div>
+        <div id="bankBalance" style="margin-top: 8px; font-size: 12px; color: #6ee7b7;"></div>
+        <div id="prestigePoints" style="margin-top: 4px; font-size: 10px; color: #a78bfa;"></div>
+    </div>
+
+    <div class="coin-btn" id="coinBtn">💰</div>
+
+    <div class="tabs" id="tabs">
+        <button class="tab-btn" data-tab="upgrades">⚡ Апгрейды</button>
+        <button class="tab-btn" data-tab="buildings">🏗️ Здания</button>
+        <button class="tab-btn" data-tab="prestige">🌟 Престиж</button>
+        <button class="tab-btn" data-tab="relics">💎 Реликвии</button>
+        <button class="tab-btn" data-tab="quests">📜 Квесты</button>
+        <button class="tab-btn" data-tab="bank">🏦 Банк</button>
+        <button class="tab-btn" data-tab="events">🎉 События</button>
+        <button class="tab-btn" data-tab="stats">📊 Статы</button>
+    </div>
+
+    <div id="tabContent" class="tab-content"></div>
+</div>
+
+<script>
+    // ---------- ПОЛНЫЕ ДАННЫЕ ----------
+    const UPGRADES = [
+        { id: "sharp_nail", name: "Острый ноготь", icon: "👆", baseCost: 10, maxLevel: 50, cpc: 1, mult: 1.5 },
+        { id: "golden_finger", name: "Золотой палец", icon: "✨", baseCost: 100, maxLevel: 30, cpc: 5, mult: 1.6 },
+        { id: "lucky_charm", name: "Талисман удачи", icon: "🍀", baseCost: 500, maxLevel: 20, cpc: 10, mult: 1.7 },
+        { id: "magic_glove", name: "Магическая перчатка", icon: "🧤", baseCost: 2000, maxLevel: 15, cpc: 25, mult: 1.8 },
+        { id: "dragon_claw", name: "Коготь дракона", icon: "🐉", baseCost: 10000, maxLevel: 10, cpc: 100, mult: 2.0 },
+        { id: "cosmic_fist", name: "Космический кулак", icon: "🌠", baseCost: 100000, maxLevel: 8, cpc: 500, mult: 2.2 },
+        { id: "god_hand", name: "Рука бога", icon: "⚡", baseCost: 2000000, maxLevel: 5, cpc: 5000, mult: 2.5 },
+        { id: "auto_clicker", name: "Авто-кликер", icon: "🤖", baseCost: 50, maxLevel: 40, cpc: 0, cps: 2, mult: 1.5 },
+        { id: "miner", name: "Шахтёр", icon: "⛏️", baseCost: 300, maxLevel: 25, cpc: 0, cps: 10, mult: 1.6 },
+        { id: "time_warp", name: "Искажение времени", icon: "⌛", baseCost: 2500, maxLevel: 15, cpc: 0, cps: 50, mult: 1.8 },
+        { id: "quantum_tap", name: "Квантовый удар", icon: "🔮", baseCost: 500000, maxLevel: 10, cpc: 0, cps: 1000, mult: 2.0 }
+    ];
+
+    const BUILDINGS = [
+        { id: "piggy_bank", name: "Копилка", icon: "🐷", baseCost: 150, cps: 5, mult: 1.15 },
+        { id: "market", name: "Рынок", icon: "🏪", baseCost: 800, cps: 20, mult: 1.15 },
+        { id: "factory", name: "Завод", icon: "🏭", baseCost: 5000, cps: 100, mult: 1.15 },
+        { id: "casino", name: "Казино", icon: "🎰", baseCost: 25000, cps: 500, mult: 1.15 },
+        { id: "bank_branch", name: "Банковский филиал", icon: "🏦", baseCost: 100000, cps: 2000, mult: 1.15 },
+        { id: "crypto_farm", name: "Крипто-ферма", icon: "💻", baseCost: 500000, cps: 10000, mult: 1.15 },
+        { id: "space_mine", name: "Космическая шахта", icon: "🚀", baseCost: 2000000, cps: 50000, mult: 1.15 },
+        { id: "time_machine", name: "Машина времени", icon: "⏰", baseCost: 10000000, cps: 200000, mult: 1.15 },
+        { id: "dark_matter", name: "Тёмная материя", icon: "🌑", baseCost: 100000000, cps: 2000000, mult: 1.15 },
+        { id: "multiverse", name: "Мультивселенная", icon: "🌌", baseCost: 1000000000, cps: 20000000, mult: 1.15 },
+        { id: "god_realm", name: "Царство богов", icon: "🏛️", baseCost: 50000000000, cps: 500000000, mult: 1.15 }
+    ];
+
+    const RELICS = [
+        { id: "golden_egg", name: "Золотое Яйцо", icon: "🥚", cost: 1, type: "multiplier", value: 1.5 },
+        { id: "ancient_coin", name: "Древняя Монета", icon: "🪙", cost: 3, type: "cpc", value: 1.5 },
+        { id: "philosophers_stone", name: "Философский камень", icon: "💠", cost: 5, type: "cps", value: 2.0 },
+        { id: "infinity_gem", name: "Камень Бесконечности", icon: "💎", cost: 10, type: "multiplier", value: 3.0 },
+        { id: "time_crystal", name: "Кристалл Времени", icon: "🔷", cost: 20, type: "cps", value: 5.0 },
+        { id: "void_heart", name: "Сердце Пустоты", icon: "🖤", cost: 50, type: "multiplier", value: 10.0 },
+        { id: "cosmic_core", name: "Космическое Ядро", icon: "⭐", cost: 100, type: "multiplier", value: 50.0 }
+    ];
+
+    const QUESTS = [
+        { id: "q1", name: "Кликер", desc: "50 кликов", icon: "👆", condition: (s) => s.totalClicks >= 50, reward: 500, rewardType: "coins" },
+        { id: "q2", name: "Маньяк кликов", desc: "500 кликов", icon: "🖱️", condition: (s) => s.totalClicks >= 500, reward: 5000, rewardType: "coins" },
+        { id: "q3", name: "Кликер-бог", desc: "5000 кликов", icon: "⚡", condition: (s) => s.totalClicks >= 5000, reward: 50000, rewardType: "coins" },
+        { id: "q4", name: "Накопитель", desc: "1000 монет", icon: "💰", condition: (s) => s.totalCoins >= 1000, reward: 2000, rewardType: "coins" },
+        { id: "q5", name: "Торговец", desc: "100000 монет", icon: "💎", condition: (s) => s.totalCoins >= 100000, reward: 200000, rewardType: "coins" },
+        { id: "q6", name: "Капиталист", desc: "10 млн монет", icon: "🏦", condition: (s) => s.totalCoins >= 10000000, reward: 20000000, rewardType: "coins" },
+        { id: "q7", name: "Застройщик", desc: "5 зданий одного типа", icon: "🏗️", condition: (s) => s.buildings.some(b => b.count >= 5), reward: 10000, rewardType: "coins" },
+        { id: "q8", name: "Магнат", desc: "25 зданий одного типа", icon: "🏙️", condition: (s) => s.buildings.some(b => b.count >= 25), reward: 500000, rewardType: "coins" },
+        { id: "q9", name: "Перерождение", desc: "1 престиж", icon: "🌟", condition: (s) => s.prestigeLevel >= 1, reward: 1, rewardType: "prestige" },
+        { id: "q10", name: "Ветеран", desc: "3 престижа", icon: "🌠", condition: (s) => s.prestigeLevel >= 3, reward: 3, rewardType: "prestige" },
+        { id: "q11", name: "Империя", desc: "Все типы зданий", icon: "👑", condition: (s) => s.buildings.every(b => b.count > 0), reward: 100000, rewardType: "coins" }
+    ];
+
+    const EVENTS = [
+        { id: "coin_rain", name: "Золотой дождь", desc: "x3 к доходу на 30 сек!", icon: "🌧️", duration: 30, multiplier: 3, color: "#f59e0b" },
+        { id: "frenzy", name: "Монетное безумие", desc: "x7 к кликам на 15 сек!", icon: "🌀", duration: 15, clickMult: 7, color: "#8b5cf6" },
+        { id: "lucky_day", name: "Счастливый день", desc: "x5 ко всему на 20 сек!", icon: "🍀", duration: 20, multiplier: 5, color: "#10b981" },
+        { id: "time_boost", name: "Ускорение времени", desc: "x10 к доходу на 10 сек!", icon: "⚡", duration: 10, cpsMult: 10, color: "#06b6d4" }
+    ];
+
+    const BANK_DEPOSITS = [
+        { label: "1 минута", duration: 1, interest: 2, minAmount: 100 },
+        { label: "5 минут", duration: 5, interest: 12, minAmount: 500 },
+        { label: "15 минут", duration: 15, interest: 40, minAmount: 2000 },
+        { label: "1 час", duration: 60, interest: 200, minAmount: 10000 },
+        { label: "6 часов", duration: 360, interest: 1500, minAmount: 50000 }
+    ];
+
+    const PRESTIGE_REQ = 1000000;
+    const MEGA_PRESTIGE_REQ = 10;
+    const HYPER_PRESTIGE_REQ = 3;
+
+    // ---------- СОСТОЯНИЕ ----------
+    let gameState = {
+        coins: 0,
+        totalCoins: 0,
+        totalClicks: 0,
+        prestigeLevel: 0,
+        megaPrestigeLevel: 0,
+        hyperPrestigeLevel: 0,
+        prestigeMultiplier: 1,
+        megaPrestigeMultiplier: 1,
+        hyperPrestigeMultiplier: 1,
+        prestigePoints: 0,
+        totalPrestigePoints: 0,
+        upgrades: UPGRADES.map(u => ({ id: u.id, level: 0 })),
+        buildings: BUILDINGS.map(b => ({ id: b.id, count: 0 })),
+        relics: RELICS.map(r => ({ id: r.id, owned: false })),
+        quests: QUESTS.map(q => ({ id: q.id, completed: false, claimed: false })),
+        bankBalance: 0,
+        bankDeposits: [],
+        activeEvent: null,
+        eventEndsAt: 0,
+        eventMultiplier: 1,
+        eventClickMult: 1,
+        eventCpsMult: 1
+    };
+
+    // Загрузка/сохранение
+    function loadGame() {
+        const saved = localStorage.getItem("coinclicker_full_save");
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                gameState = { ...gameState, ...data };
+                gameState.upgrades = UPGRADES.map(u => {
+                    const found = data.upgrades?.find(x => x.id === u.id);
+                    return found || { id: u.id, level: 0 };
+                });
+                gameState.buildings = BUILDINGS.map(b => {
+                    const found = data.buildings?.find(x => x.id === b.id);
+                    return found || { id: b.id, count: 0 };
+                });
+                gameState.relics = RELICS.map(r => {
+                    const found = data.relics?.find(x => x.id === r.id);
+                    return found || { id: r.id, owned: false };
+                });
+                gameState.quests = QUESTS.map(q => {
+                    const found = data.quests?.find(x => x.id === q.id);
+                    return found || { id: q.id, completed: false, claimed: false };
+                });
+            } catch(e) {}
         }
-    </script>
+    }
 
-    <script type="module">
-        import React, { useState, useEffect, useCallback, useRef } from "react";
-        import { createRoot } from "react-dom/client";
+    function saveGame() {
+        localStorage.setItem("coinclicker_full_save", JSON.stringify(gameState));
+    }
 
-        // Telegram Web App инициализация
-        const tg = window.Telegram?.WebApp;
-        if (tg) {
-            tg.expand();
-            tg.enableClosingConfirmation();
-            tg.setHeaderColor("secondary_bg_color");
-            tg.setBackgroundColor("#0a0500");
-            tg.setBottomBarColor("#0a0500");
-        }
-
-        // ─────────────────────────────────────────────
-        // SAVE KEYS
-        // ─────────────────────────────────────────────
-        const SAVE_KEY = "coin_clicker_save_v2";
-        const NEW_SAVE_KEY = "coin_clicker_save_v3";
-        const TELEGRAM_SAVE_KEY = "coin_clicker_telegram_save";
-
-        // ─────────────────────────────────────────────
-        // HELPERS
-        // ─────────────────────────────────────────────
-        const fmt = (n) => {
-            if (typeof n !== 'number' || isNaN(n)) n = 0;
-            if (n >= 1e18) return (n / 1e18).toFixed(2) + "Кв";
-            if (n >= 1e15) return (n / 1e15).toFixed(2) + "Кд";
-            if (n >= 1e12) return (n / 1e12).toFixed(2) + "Т";
-            if (n >= 1e9) return (n / 1e9).toFixed(2) + "М";
-            if (n >= 1e6) return (n / 1e6).toFixed(2) + "млн";
-            if (n >= 1e3) return (n / 1e3).toFixed(2) + "к";
-            return Math.floor(n).toLocaleString("ru-RU");
-        };
-
-        const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
-
-        // ─────────────────────────────────────────────
-        // STATIC DATA
-        // ─────────────────────────────────────────────
-        const UPGRADES = [
-            { id: "sharp_nail", name: "Острый ноготь", desc: "+1 за клик", icon: "👆", baseCost: 10, maxLevel: 50, cpc: 1, cps: 0, mult: 1.5 },
-            { id: "golden_finger", name: "Золотой палец", desc: "+5 за клик", icon: "✨", baseCost: 100, maxLevel: 30, cpc: 5, cps: 0, mult: 1.6 },
-            { id: "lucky_charm", name: "Талисман удачи", desc: "+10 за клик", icon: "🍀", baseCost: 500, maxLevel: 20, cpc: 10, cps: 0, mult: 1.7 },
-            { id: "magic_glove", name: "Магическая перчатка", desc: "+25 за клик", icon: "🧤", baseCost: 2000, maxLevel: 15, cpc: 25, cps: 0, mult: 1.8 },
-            { id: "dragon_claw", name: "Коготь дракона", desc: "+100 за клик", icon: "🐉", baseCost: 10000, maxLevel: 10, cpc: 100, cps: 0, mult: 2.0 },
-            { id: "cosmic_fist", name: "Космический кулак", desc: "+500 за клик", icon: "🌠", baseCost: 100000, maxLevel: 8, cpc: 500, cps: 0, mult: 2.2 },
-            { id: "god_hand", name: "Рука бога", desc: "+5000 за клик", icon: "⚡", baseCost: 2000000, maxLevel: 5, cpc: 5000, cps: 0, mult: 2.5 },
-            { id: "auto_clicker", name: "Авто-кликер", desc: "+2/сек", icon: "🤖", baseCost: 50, maxLevel: 40, cpc: 0, cps: 2, mult: 1.5 },
-            { id: "miner", name: "Шахтёр", desc: "+10/сек", icon: "⛏️", baseCost: 300, maxLevel: 25, cpc: 0, cps: 10, mult: 1.6 },
-            { id: "time_warp", name: "Искажение времени", desc: "+50/сек", icon: "⌛", baseCost: 2500, maxLevel: 15, cpc: 0, cps: 50, mult: 1.8 },
-            { id: "quantum_tap", name: "Квантовый удар", desc: "+1000/сек", icon: "🔮", baseCost: 500000, maxLevel: 10, cpc: 0, cps: 1000, mult: 2.0 },
-        ];
-
-        const BUILDINGS = [
-            { id: "piggy_bank", name: "Копилка", desc: "5/сек", icon: "🐷", baseCost: 150, cps: 5, mult: 1.15 },
-            { id: "market", name: "Рынок", desc: "20/сек", icon: "🏪", baseCost: 800, cps: 20, mult: 1.15 },
-            { id: "factory", name: "Завод", desc: "100/сек", icon: "🏭", baseCost: 5000, cps: 100, mult: 1.15 },
-            { id: "casino", name: "Казино", desc: "500/сек", icon: "🎰", baseCost: 25000, cps: 500, mult: 1.15 },
-            { id: "bank_branch", name: "Банковский филиал", desc: "2K/сек", icon: "🏦", baseCost: 100000, cps: 2000, mult: 1.15 },
-            { id: "crypto_farm", name: "Крипто-ферма", desc: "10K/сек", icon: "💻", baseCost: 500000, cps: 10000, mult: 1.15 },
-            { id: "space_mine", name: "Космическая шахта", desc: "50K/сек", icon: "🚀", baseCost: 2000000, cps: 50000, mult: 1.15 },
-            { id: "time_machine", name: "Машина времени", desc: "200K/сек", icon: "⏰", baseCost: 10000000, cps: 200000, mult: 1.15 },
-            { id: "dark_matter", name: "Тёмная материя", desc: "2М/сек", icon: "🌑", baseCost: 100000000, cps: 2000000, mult: 1.15 },
-            { id: "multiverse", name: "Мультивселенная", desc: "20М/сек", icon: "🌌", baseCost: 1000000000, cps: 20000000, mult: 1.15 },
-            { id: "god_realm", name: "Царство богов", desc: "500М/сек", icon: "🏛️", baseCost: 50000000000, cps: 500000000, mult: 1.15 },
-        ];
-
-        const BANK_DEPOSITS = [
-            { label: "1 минута", duration: 1, interest: 2 },
-            { label: "5 минут", duration: 5, interest: 12 },
-            { label: "15 минут", duration: 15, interest: 40 },
-            { label: "1 час", duration: 60, interest: 200 },
-            { label: "6 часов", duration: 360, interest: 1500 },
-        ];
-
-        const RELICS = [
-            { id: "golden_egg", name: "Золотое Яйцо", desc: "x1.5 ко всем монетам навсегда", icon: "🥚", cost: 1, type: "multiplier", value: 1.5 },
-            { id: "ancient_coin", name: "Древняя Монета", desc: "+50% к доходу за клик навсегда", icon: "🪙", cost: 3, type: "cpc_mult", value: 1.5 },
-            { id: "philosophers_stone", name: "Философский камень", desc: "x2 к пассивному доходу навсегда", icon: "💠", cost: 5, type: "cps_mult", value: 2.0 },
-            { id: "infinity_gem", name: "Камень Бесконечности", desc: "x3 ко всему навсегда", icon: "💎", cost: 10, type: "multiplier", value: 3.0 },
-            { id: "time_crystal", name: "Кристалл Времени", desc: "x5 к пассивному доходу навсегда", icon: "🔷", cost: 20, type: "cps_mult", value: 5.0 },
-            { id: "void_heart", name: "Сердце Пустоты", desc: "x10 ко всему навсегда", icon: "🖤", cost: 50, type: "multiplier", value: 10.0 },
-            { id: "cosmic_core", name: "Космическое Ядро", desc: "x50 ко всему навсегда", icon: "⭐", cost: 100, type: "multiplier", value: 50.0 },
-        ];
-
-        const QUESTS = [
-            { id: "q_clicks_50", name: "Кликер", desc: "50 кликов", icon: "👆", condition: (s) => s.totalClicks >= 50, reward: 500, rewardType: "coins" },
-            { id: "q_clicks_500", name: "Маньяк кликов", desc: "500 кликов", icon: "🖱️", condition: (s) => s.totalClicks >= 500, reward: 5000, rewardType: "coins" },
-            { id: "q_clicks_5000", name: "Кликер-бог", desc: "5000 кликов", icon: "⚡", condition: (s) => s.totalClicks >= 5000, reward: 50000, rewardType: "coins" },
-            { id: "q_earn_1k", name: "Накопитель", desc: "Заработай 1000 монет", icon: "💰", condition: (s) => s.totalCoins >= 1000, reward: 2000, rewardType: "coins" },
-            { id: "q_earn_100k", name: "Торговец", desc: "Заработай 100 000 монет", icon: "💎", condition: (s) => s.totalCoins >= 100000, reward: 200000, rewardType: "coins" },
-            { id: "q_earn_10m", name: "Капиталист", desc: "Заработай 10 млн монет", icon: "🏦", condition: (s) => s.totalCoins >= 10000000, reward: 20000000, rewardType: "coins" },
-            { id: "q_building_5", name: "Застройщик", desc: "5 зданий одного типа", icon: "🏗️", condition: (s) => s.buildings.some((b) => b.count >= 5), reward: 10000, rewardType: "coins" },
-            { id: "q_building_25", name: "Магнат", desc: "25 зданий одного типа", icon: "🏙️", condition: (s) => s.buildings.some((b) => b.count >= 25), reward: 500000, rewardType: "coins" },
-            { id: "q_prestige_1", name: "Перерождение", desc: "Первый престиж", icon: "🌟", condition: (s) => s.prestigeLevel >= 1, reward: 1, rewardType: "prestige_pts" },
-            { id: "q_prestige_3", name: "Ветеран", desc: "3 престижа", icon: "🌠", condition: (s) => s.prestigeLevel >= 3, reward: 3, rewardType: "prestige_pts" },
-            { id: "q_mega_1", name: "Мега-Рождение", desc: "Первое Мега-Перерождение", icon: "🔥", condition: (s) => s.megaPrestigeLevel >= 1, reward: 5, rewardType: "prestige_pts" },
-            { id: "q_all_buildings", name: "Империя", desc: "Купи все типы зданий", icon: "👑", condition: (s) => s.buildings.every((b) => b.count > 0), reward: 100000, rewardType: "coins" },
-        ];
-
-        const ACHIEVEMENTS = [
-            { id: "first_click", name: "Первый шаг", desc: "Первый клик", icon: "👆", condition: (s) => s.totalClicks >= 1 },
-            { id: "clicks_100", name: "Кликер-новичок", desc: "100 кликов", icon: "🖱️", condition: (s) => s.totalClicks >= 100 },
-            { id: "clicks_1000", name: "Кликер-мастер", desc: "1000 кликов", icon: "⚡", condition: (s) => s.totalClicks >= 1000 },
-            { id: "clicks_10000", name: "Кликер-легенда", desc: "10 000 кликов", icon: "🏆", condition: (s) => s.totalClicks >= 10000 },
-            { id: "clicks_100000", name: "Кликер-бог", desc: "100 000 кликов", icon: "🌟", condition: (s) => s.totalClicks >= 100000 },
-            { id: "coins_100", name: "Начинающий богач", desc: "100 монет", icon: "💰", condition: (s) => s.totalCoins >= 100 },
-            { id: "coins_10000", name: "Состоятельный", desc: "10 000 монет", icon: "💎", condition: (s) => s.totalCoins >= 10000 },
-            { id: "coins_1m", name: "Миллионер", desc: "1 000 000 монет", icon: "🤑", condition: (s) => s.totalCoins >= 1000000 },
-            { id: "coins_1b", name: "Миллиардер", desc: "1 млрд монет", icon: "👑", condition: (s) => s.totalCoins >= 1000000000 },
-            { id: "coins_1t", name: "Триллионер", desc: "1 трлн монет", icon: "🌌", condition: (s) => s.totalCoins >= 1e12 },
-            { id: "coins_1q", name: "Квадриллионер", desc: "1 квд монет", icon: "🌠", condition: (s) => s.totalCoins >= 1e15 },
-            { id: "first_building", name: "Застройщик", desc: "Первое здание", icon: "🏗️", condition: (s) => s.buildings.some((b) => b.count > 0) },
-            { id: "all_buildings", name: "Магнат", desc: "Все типы зданий", icon: "🏙️", condition: (s) => s.buildings.every((b) => b.count > 0) },
-            { id: "bank_investor", name: "Инвестор", desc: "Открой вклад", icon: "🏦", condition: (s) => s.bankDeposits.length > 0 || s.bankBalance > 0 },
-            { id: "prestige_1", name: "Перерождение", desc: "Первый престиж", icon: "🌟", condition: (s) => s.prestigeLevel >= 1 },
-            { id: "prestige_5", name: "Ветеран Престижа", desc: "5 престижей", icon: "🌠", condition: (s) => s.prestigeLevel >= 5 },
-            { id: "prestige_10", name: "Мастер Престижа", desc: "10 престижей", icon: "💫", condition: (s) => s.prestigeLevel >= 10 },
-            { id: "mega_prestige_1", name: "Мега-Перерождение", desc: "Первое Мега-Перерождение", icon: "🔥", condition: (s) => s.megaPrestigeLevel >= 1 },
-            { id: "mega_prestige_3", name: "Мега-Ветеран", desc: "3 Мега-Перерождения", icon: "💥", condition: (s) => s.megaPrestigeLevel >= 3 },
-            { id: "hyper_prestige_1", name: "ГИПЕР-ПЕРЕРОЖДЕНИЕ", desc: "Первое Гипер-Перерождение", icon: "🌈", condition: (s) => s.hyperPrestigeLevel >= 1 },
-            { id: "relic_first", name: "Коллекционер", desc: "Первая реликвия", icon: "🥚", condition: (s) => s.relics.some((r) => r.owned) },
-            { id: "relic_all", name: "Хранитель реликвий", desc: "Все реликвии", icon: "🏺", condition: (s) => s.relics.every((r) => r.owned) },
-            { id: "cps_1000", name: "Фабрика", desc: "1000 монет/сек", icon: "⚙️", condition: (s) => s.coinsPerSecond >= 1000 },
-            { id: "cps_1m", name: "Мегафабрика", desc: "1 млн монет/сек", icon: "🏭", condition: (s) => s.coinsPerSecond >= 1000000 },
-            { id: "cps_1b", name: "Планетарная фабрика", desc: "1 млрд монет/сек", icon: "🌍", condition: (s) => s.coinsPerSecond >= 1000000000 },
-            { id: "quest_5", name: "Авантюрист", desc: "5 квестов выполнено", icon: "📜", condition: (s) => s.quests.filter((q) => q.completed).length >= 5 },
-            { id: "quest_all", name: "Легенда квестов", desc: "Все квесты выполнены", icon: "📖", condition: (s) => s.quests.every((q) => q.completed) },
-        ];
-
-        const EVENTS = [
-            { id: "coin_rain", name: "Золотой дождь", desc: "x3 к доходу на 30 сек!", icon: "🌧️", duration: 30, multiplier: 3, color: "#f59e0b" },
-            { id: "frenzy", name: "Монетное безумие", desc: "x7 к кликам на 15 сек!", icon: "🌀", duration: 15, clickMult: 7, color: "#8b5cf6" },
-            { id: "lucky_day", name: "Счастливый день", desc: "x5 ко всему на 20 сек!", icon: "🍀", duration: 20, multiplier: 5, color: "#10b981" },
-            { id: "time_boost", name: "Ускорение времени", desc: "x10 к пассивному доходу на 10 сек!", icon: "⚡", duration: 10, cpsMult: 10, color: "#06b6d4" },
-        ];
-
-        // ─────────────────────────────────────────────
-        // DEFAULT STATE
-        // ─────────────────────────────────────────────
-        const defaultState = () => ({
-            coins: 0,
-            totalCoins: 0,
-            totalAllTimeCoins: 0,
-            coinsPerClick: 1,
-            coinsPerSecond: 0,
-            totalClicks: 0,
-            totalAllTimeClicks: 0,
-            upgrades: UPGRADES.map((u) => ({ id: u.id, level: 0 })),
-            buildings: BUILDINGS.map((b) => ({ id: b.id, count: 0 })),
-            bankBalance: 0,
-            bankDeposits: [],
-            achievements: ACHIEVEMENTS.map((a) => ({ id: a.id, unlocked: false })),
-            quests: QUESTS.map((q) => ({ id: q.id, completed: false, claimed: false })),
-            relics: RELICS.map((r) => ({ id: r.id, owned: false })),
-            prestigeLevel: 0,
-            prestigeMultiplier: 1,
-            prestigePoints: 0,
-            totalPrestigePoints: 0,
-            megaPrestigeLevel: 0,
-            megaPrestigeMultiplier: 1,
-            megaPrestigePoints: 0,
-            hyperPrestigeLevel: 0,
-            hyperPrestigeMultiplier: 1,
-            activeEvent: null,
-            eventMultiplier: 1,
-            eventClickMult: 1,
-            eventCpsMult: 1,
-            lastSaved: Date.now(),
-            playTime: 0,
+    // Расчёты
+    function getRelicMult(type) {
+        let mult = 1;
+        gameState.relics.forEach(r => {
+            if (!r.owned) return;
+            const def = RELICS.find(x => x.id === r.id);
+            if (def.type === "multiplier") mult *= def.value;
+            if (def.type === type) mult *= def.value;
         });
+        return mult;
+    }
 
-        // ─────────────────────────────────────────────
-        // LOAD / SAVE
-        // ─────────────────────────────────────────────
-        const loadState = () => {
-            try {
-                const rawNew = localStorage.getItem(NEW_SAVE_KEY);
-                if (rawNew) {
-                    const parsed = JSON.parse(rawNew);
-                    const def = defaultState();
-                    return mergeState(def, parsed);
-                }
-                const rawOld = localStorage.getItem(SAVE_KEY);
-                if (rawOld) {
-                    const parsed = JSON.parse(rawOld);
-                    const def = defaultState();
-                    return mergeState(def, parsed);
-                }
-                return defaultState();
-            } catch {
-                return defaultState();
-            }
-        };
-
-        const mergeState = (def, parsed) => ({
-            ...def,
-            ...parsed,
-            upgrades: def.upgrades.map((u) => {
-                const s = parsed.upgrades?.find((x) => x.id === u.id);
-                return s ? { ...u, level: s.level || 0 } : u;
-            }),
-            buildings: def.buildings.map((b) => {
-                const s = parsed.buildings?.find((x) => x.id === b.id);
-                return s ? { ...b, count: s.count || 0 } : b;
-            }),
-            achievements: def.achievements.map((a) => {
-                const s = parsed.achievements?.find((x) => x.id === a.id);
-                return s ? { ...a, unlocked: s.unlocked || false } : a;
-            }),
-            quests: def.quests.map((q) => {
-                const s = parsed.quests?.find((x) => x.id === q.id);
-                return s ? { ...q, completed: s.completed || false, claimed: s.claimed || false } : q;
-            }),
-            relics: def.relics.map((r) => {
-                const s = parsed.relics?.find((x) => x.id === r.id);
-                return s ? { ...r, owned: s.owned || false } : r;
-            }),
-            bankDeposits: parsed.bankDeposits || [],
-            prestigeLevel: parsed.prestigeLevel || 0,
-            prestigeMultiplier: parsed.prestigeMultiplier || 1,
-            prestigePoints: parsed.prestigePoints || 0,
-            totalPrestigePoints: parsed.totalPrestigePoints || parsed.prestigePoints || 0,
-            megaPrestigeLevel: parsed.megaPrestigeLevel || 0,
-            megaPrestigeMultiplier: parsed.megaPrestigeMultiplier || 1,
-            megaPrestigePoints: parsed.megaPrestigePoints || 0,
-            hyperPrestigeLevel: parsed.hyperPrestigeLevel || 0,
-            hyperPrestigeMultiplier: parsed.hyperPrestigeMultiplier || 1,
-            totalAllTimeCoins: parsed.totalAllTimeCoins || parsed.totalCoins || 0,
-            totalAllTimeClicks: parsed.totalAllTimeClicks || parsed.totalClicks || 0,
-            activeEvent: null,
-            eventMultiplier: 1,
-            eventClickMult: 1,
-            eventCpsMult: 1,
-            playTime: parsed.playTime || 0,
+    function calcCPC() {
+        let bonus = 0;
+        gameState.upgrades.forEach(u => {
+            const def = UPGRADES.find(x => x.id === u.id);
+            if (def) bonus += (def.cpc || 0) * u.level;
         });
+        const base = 1 + bonus;
+        const relicMult = getRelicMult("cpc");
+        let mult = gameState.prestigeMultiplier * gameState.megaPrestigeMultiplier * gameState.hyperPrestigeMultiplier * relicMult;
+        if (gameState.activeEvent && gameState.eventClickMult > 1) mult *= gameState.eventClickMult;
+        return Math.floor(base * mult);
+    }
 
-        // ─────────────────────────────────────────────
-        // CALCULATIONS
-        // ─────────────────────────────────────────────
-        const calcRelicMult = (relics, type) => {
-            let m = 1;
-            relics.forEach((r) => {
-                if (!r.owned) return;
-                const def = RELICS.find((x) => x.id === r.id);
-                if (!def) return;
-                if (def.type === "multiplier") m *= def.value;
-                else if (def.type === type) m *= def.value;
-            });
-            return m;
-        };
+    function calcCPS() {
+        let fromUps = 0;
+        let fromBlds = 0;
+        gameState.upgrades.forEach(u => {
+            const def = UPGRADES.find(x => x.id === u.id);
+            if (def && def.cps) fromUps += def.cps * u.level;
+        });
+        gameState.buildings.forEach(b => {
+            const def = BUILDINGS.find(x => x.id === b.id);
+            if (def) fromBlds += def.cps * b.count;
+        });
+        const relicMult = getRelicMult("cps");
+        let mult = gameState.prestigeMultiplier * gameState.megaPrestigeMultiplier * gameState.hyperPrestigeMultiplier * relicMult;
+        if (gameState.activeEvent && gameState.eventMultiplier > 1) mult *= gameState.eventMultiplier;
+        if (gameState.activeEvent && gameState.eventCpsMult > 1) mult *= gameState.eventCpsMult;
+        return Math.floor((fromUps + fromBlds) * mult);
+    }
 
-        const calcCPC = (state) => {
-            const ups = UPGRADES.reduce((s, u) => {
-                const saved = state.upgrades.find((x) => x.id === u.id);
-                return s + u.cpc * (saved?.level || 0);
-            }, 0);
-            const base = 1 + ups;
-            const relicMult = calcRelicMult(state.relics, "cpc_mult");
-            return Math.floor(base * state.prestigeMultiplier * state.megaPrestigeMultiplier * state.hyperPrestigeMultiplier * relicMult * state.eventClickMult);
-        };
+    function formatNumber(n) {
+        if (typeof n !== 'number' || isNaN(n)) n = 0;
+        if (n >= 1e18) return (n/1e18).toFixed(2) + "Кв";
+        if (n >= 1e15) return (n/1e15).toFixed(2) + "Кд";
+        if (n >= 1e12) return (n/1e12).toFixed(2) + "Т";
+        if (n >= 1e9) return (n/1e9).toFixed(2) + "М";
+        if (n >= 1e6) return (n/1e6).toFixed(2) + "млн";
+        if (n >= 1e3) return (n/1e3).toFixed(1) + "к";
+        return Math.floor(n).toString();
+    }
 
-        const calcCPS = (state) => {
-            const fromUps = UPGRADES.reduce((s, u) => {
-                const saved = state.upgrades.find((x) => x.id === u.id);
-                return s + u.cps * (saved?.level || 0);
-            }, 0);
-            const fromBlds = BUILDINGS.reduce((s, b) => {
-                const saved = state.buildings.find((x) => x.id === b.id);
-                return s + b.cps * (saved?.count || 0);
-            }, 0);
-            const relicMult = calcRelicMult(state.relics, "cps_mult");
-            return (fromUps + fromBlds) * state.prestigeMultiplier * state.megaPrestigeMultiplier * state.hyperPrestigeMultiplier * relicMult * state.eventMultiplier * state.eventCpsMult;
-        };
+    // Игровые действия
+    function addParticle(x, y, value) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.innerText = `+${formatNumber(value)}`;
+        particle.style.left = (x - 20) + 'px';
+        particle.style.top = (y - 20) + 'px';
+        document.body.appendChild(particle);
+        setTimeout(() => particle.remove(), 500);
+    }
 
-        const PRESTIGE_REQ = 1000000;
-        const MEGA_PRESTIGE_REQ = 10;
-        const HYPER_PRESTIGE_REQ = 3;
-
-        // Telegram Cloud Storage функции
-        const saveToTelegramCloud = (state) => {
-            if (!tg) return;
-            try {
-                const saveData = {
-                    coins: state.coins,
-                    totalCoins: state.totalCoins,
-                    totalAllTimeCoins: state.totalAllTimeCoins,
-                    totalClicks: state.totalClicks,
-                    totalAllTimeClicks: state.totalAllTimeClicks,
-                    bankBalance: state.bankBalance,
-                    bankDeposits: state.bankDeposits,
-                    prestigeLevel: state.prestigeLevel,
-                    prestigeMultiplier: state.prestigeMultiplier,
-                    prestigePoints: state.prestigePoints,
-                    totalPrestigePoints: state.totalPrestigePoints,
-                    megaPrestigeLevel: state.megaPrestigeLevel,
-                    megaPrestigeMultiplier: state.megaPrestigeMultiplier,
-                    megaPrestigePoints: state.megaPrestigePoints,
-                    hyperPrestigeLevel: state.hyperPrestigeLevel,
-                    hyperPrestigeMultiplier: state.hyperPrestigeMultiplier,
-                    playTime: state.playTime,
-                    upgrades: state.upgrades,
-                    buildings: state.buildings,
-                    achievements: state.achievements,
-                    quests: state.quests,
-                    relics: state.relics,
-                };
-                tg.CloudStorage.setItem(TELEGRAM_SAVE_KEY, JSON.stringify(saveData), (err) => {
-                    if (err) console.error("Cloud save error:", err);
-                });
-            } catch(e) { console.error("Cloud save error:", e); }
-        };
-
-        const loadFromTelegramCloud = () => {
-            if (!tg) return Promise.resolve(null);
-            return new Promise((resolve) => {
-                tg.CloudStorage.getItem(TELEGRAM_SAVE_KEY, (err, data) => {
-                    if (err || !data) {
-                        resolve(null);
-                    } else {
-                        try {
-                            resolve(JSON.parse(data));
-                        } catch {
-                            resolve(null);
-                        }
-                    }
-                });
-            });
-        };
-
-        // ─────────────────────────────────────────────
-        // HOOK
-        // ─────────────────────────────────────────────
-        const useGame = () => {
-            const [state, setState] = useState(null);
-            const [isLoading, setIsLoading] = useState(true);
-            const ref = useRef(state);
-            ref.current = state;
-
-            useEffect(() => {
-                const load = async () => {
-                    const cloudSave = await loadFromTelegramCloud();
-                    if (cloudSave) {
-                        const def = defaultState();
-                        const merged = mergeState(def, cloudSave);
-                        setState(merged);
-                    } else {
-                        setState(loadState());
-                    }
-                    setIsLoading(false);
-                    
-                    // Сообщаем Telegram, что приложение загружено
-                    if (tg) tg.ready();
-                };
-                load();
-            }, []);
-
-            useEffect(() => {
-                if (!state) return;
-                const timeout = setTimeout(() => {
-                    saveToTelegramCloud(state);
-                }, 1000);
-                return () => clearTimeout(timeout);
-            }, [state]);
-
-            useEffect(() => {
-                if (!state) return;
-                const t = setInterval(() => {
-                    const s = ref.current;
-                    if (!s) return;
-                    const toSave = {
-                        coins: s.coins, totalCoins: s.totalCoins, totalAllTimeCoins: s.totalAllTimeCoins,
-                        totalClicks: s.totalClicks, totalAllTimeClicks: s.totalAllTimeClicks,
-                        bankBalance: s.bankBalance, bankDeposits: s.bankDeposits,
-                        prestigeLevel: s.prestigeLevel, prestigeMultiplier: s.prestigeMultiplier,
-                        prestigePoints: s.prestigePoints, totalPrestigePoints: s.totalPrestigePoints,
-                        megaPrestigeLevel: s.megaPrestigeLevel, megaPrestigeMultiplier: s.megaPrestigeMultiplier,
-                        megaPrestigePoints: s.megaPrestigePoints,
-                        hyperPrestigeLevel: s.hyperPrestigeLevel, hyperPrestigeMultiplier: s.hyperPrestigeMultiplier,
-                        playTime: s.playTime,
-                        upgrades: s.upgrades,
-                        buildings: s.buildings,
-                        achievements: s.achievements,
-                        quests: s.quests,
-                        relics: s.relics,
-                    };
-                    localStorage.setItem(NEW_SAVE_KEY, JSON.stringify(toSave));
-                }, 3000);
-                return () => clearInterval(t);
-            }, [state]);
-
-            useEffect(() => {
-                if (!state) return;
-                const t = setInterval(() => {
-                    setState((prev) => prev ? { ...prev, playTime: prev.playTime + 1 } : prev);
-                }, 1000);
-                return () => clearInterval(t);
-            }, [state]);
-
-            useEffect(() => {
-                if (!state) return;
-                const t = setInterval(() => {
-                    setState((prev) => {
-                        if (!prev) return prev;
-                        const cps = calcCPS(prev);
-                        if (cps === 0) return prev;
-                        const earned = cps / 20;
-                        return { ...prev, coins: prev.coins + earned, totalCoins: prev.totalCoins + earned, totalAllTimeCoins: prev.totalAllTimeCoins + earned };
-                    });
-                }, 50);
-                return () => clearInterval(t);
-            }, [state]);
-
-            useEffect(() => {
-                if (!state) return;
-                const t = setInterval(() => {
-                    setState((prev) => {
-                        if (!prev) return prev;
-                        if (!prev.bankDeposits.length) return prev;
-                        const now = Date.now();
-                        let bal = prev.bankBalance;
-                        const remaining = prev.bankDeposits.filter((dep) => {
-                            const elapsed = (now - dep.startTime) / 60000;
-                            if (elapsed >= dep.duration) { bal += dep.amount * (1 + dep.interest / 100); return false; }
-                            return true;
-                        });
-                        if (remaining.length === prev.bankDeposits.length) return prev;
-                        return { ...prev, bankBalance: bal, bankDeposits: remaining };
-                    });
-                }, 1000);
-                return () => clearInterval(t);
-            }, [state]);
-
-            useEffect(() => {
-                if (!state) return;
-                const t = setInterval(() => {
-                    setState((prev) => {
-                        if (!prev) return prev;
-                        let changed = false;
-                        const newAch = prev.achievements.map((a) => {
-                            if (a.unlocked) return a;
-                            const def = ACHIEVEMENTS.find((x) => x.id === a.id);
-                            if (def?.condition(prev)) { changed = true; return { ...a, unlocked: true }; }
-                            return a;
-                        });
-                        const newQ = prev.quests.map((q) => {
-                            if (q.completed) return q;
-                            const def = QUESTS.find((x) => x.id === q.id);
-                            if (def?.condition(prev)) { changed = true; return { ...q, completed: true }; }
-                            return q;
-                        });
-                        if (!changed) return prev;
-                        return { ...prev, achievements: newAch, quests: newQ };
-                    });
-                }, 500);
-                return () => clearInterval(t);
-            }, [state]);
-
-            useEffect(() => {
-                if (!state) return;
-                const t = setInterval(() => {
-                    setState((prev) => {
-                        if (!prev) return prev;
-                        if (!prev.activeEvent) return prev;
-                        if (Date.now() >= prev.activeEvent.endsAt) {
-                            return { ...prev, activeEvent: null, eventMultiplier: 1, eventClickMult: 1, eventCpsMult: 1 };
-                        }
-                        return prev;
-                    });
-                }, 500);
-                return () => clearInterval(t);
-            }, [state]);
-
-            useEffect(() => {
-                if (!state) return;
-                const t = setInterval(() => {
-                    setState((prev) => {
-                        if (!prev) return prev;
-                        if (prev.activeEvent) return prev;
-                        if (prev.totalCoins < 1000) return prev;
-                        if (Math.random() < 0.005) {
-                            const ev = EVENTS[Math.floor(Math.random() * EVENTS.length)];
-                            return {
-                                ...prev,
-                                activeEvent: { id: ev.id, endsAt: Date.now() + ev.duration * 1000 },
-                                eventMultiplier: ev.multiplier || 1,
-                                eventClickMult: ev.clickMult || 1,
-                                eventCpsMult: ev.cpsMult || 1,
-                            };
-                        }
-                        return prev;
-                    });
-                }, 10000);
-                return () => clearInterval(t);
-            }, [state]);
-
-            const click = useCallback(() => {
-                setState((prev) => {
-                    if (!prev) return prev;
-                    const cpc = calcCPC(prev);
-                    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
-                    return {
-                        ...prev,
-                        coins: prev.coins + cpc,
-                        totalCoins: prev.totalCoins + cpc,
-                        totalAllTimeCoins: prev.totalAllTimeCoins + cpc,
-                        totalClicks: prev.totalClicks + 1,
-                        totalAllTimeClicks: prev.totalAllTimeClicks + 1,
-                    };
-                });
-            }, []);
-
-            const buyUpgrade = useCallback((id) => {
-                setState((prev) => {
-                    if (!prev) return prev;
-                    const uDef = UPGRADES.find((u) => u.id === id);
-                    if (!uDef) return prev;
-                    const saved = prev.upgrades.find((u) => u.id === id);
-                    if (!saved || saved.level >= uDef.maxLevel) return prev;
-                    const cost = Math.floor(uDef.baseCost * Math.pow(uDef.mult, saved.level));
-                    if (prev.coins < cost) return prev;
-                    const newUps = prev.upgrades.map((u) => u.id === id ? { ...u, level: u.level + 1 } : u);
-                    const ns = { ...prev, coins: prev.coins - cost, upgrades: newUps };
-                    return { ...ns, coinsPerClick: calcCPC(ns), coinsPerSecond: calcCPS(ns) };
-                });
-            }, []);
-
-            const buyBuilding = useCallback((id) => {
-                setState((prev) => {
-                    if (!prev) return prev;
-                    const bDef = BUILDINGS.find((b) => b.id === id);
-                    if (!bDef) return prev;
-                    const saved = prev.buildings.find((b) => b.id === id);
-                    if (!saved) return prev;
-                    const cost = Math.floor(bDef.baseCost * Math.pow(bDef.mult, saved.count));
-                    if (prev.coins < cost) return prev;
-                    const newBlds = prev.buildings.map((b) => b.id === id ? { ...b, count: b.count + 1 } : b);
-                    const ns = { ...prev, coins: prev.coins - cost, buildings: newBlds };
-                    return { ...ns, coinsPerSecond: calcCPS(ns) };
-                });
-            }, []);
-
-            const depositToBank = useCallback((amount, duration, interest, label) => {
-                setState((prev) => {
-                    if (!prev) return prev;
-                    if (prev.coins < amount) return prev;
-                    const dep = { id: Date.now().toString(), amount, interest, startTime: Date.now(), duration, label };
-                    return { ...prev, coins: prev.coins - amount, bankDeposits: [...prev.bankDeposits, dep] };
-                });
-            }, []);
-
-            const withdrawBank = useCallback(() => {
-                setState((prev) => {
-                    if (!prev) return prev;
-                    if (prev.bankBalance <= 0) return prev;
-                    return { ...prev, coins: prev.coins + prev.bankBalance, totalCoins: prev.totalCoins + prev.bankBalance, totalAllTimeCoins: prev.totalAllTimeCoins + prev.bankBalance, bankBalance: 0 };
-                });
-            }, []);
-
-            const prestige = useCallback(() => {
-                setState((prev) => {
-                    if (!prev) return prev;
-                    if (prev.totalCoins < PRESTIGE_REQ) return prev;
-                    const pts = Math.floor(Math.log10(prev.totalCoins / PRESTIGE_REQ) * 3 + 1);
-                    const newLevel = prev.prestigeLevel + 1;
-                    const newMult = 1 + newLevel * 0.5 + prev.megaPrestigeLevel * 2 + prev.hyperPrestigeLevel * 10;
-                    const fresh = defaultState();
-                    return {
-                        ...fresh,
-                        prestigeLevel: newLevel,
-                        prestigeMultiplier: newMult,
-                        prestigePoints: prev.prestigePoints + pts,
-                        totalPrestigePoints: prev.totalPrestigePoints + pts,
-                        megaPrestigeLevel: prev.megaPrestigeLevel,
-                        megaPrestigeMultiplier: prev.megaPrestigeMultiplier,
-                        megaPrestigePoints: prev.megaPrestigePoints,
-                        hyperPrestigeLevel: prev.hyperPrestigeLevel,
-                        hyperPrestigeMultiplier: prev.hyperPrestigeMultiplier,
-                        achievements: prev.achievements,
-                        quests: prev.quests,
-                        relics: prev.relics,
-                        totalAllTimeCoins: prev.totalAllTimeCoins,
-                        totalAllTimeClicks: prev.totalAllTimeClicks,
-                        playTime: prev.playTime,
-                    };
-                });
-            }, []);
-
-            const megaPrestige = useCallback(() => {
-                setState((prev) => {
-                    if (!prev) return prev;
-                    if (prev.prestigeLevel < MEGA_PRESTIGE_REQ) return prev;
-                    const newMega = prev.megaPrestigeLevel + 1;
-                    const newMegaMult = 1 + newMega * 5 + prev.hyperPrestigeLevel * 50;
-                    const fresh = defaultState();
-                    return {
-                        ...fresh,
-                        megaPrestigeLevel: newMega,
-                        megaPrestigeMultiplier: newMegaMult,
-                        megaPrestigePoints: prev.megaPrestigePoints + newMega * 3,
-                        hyperPrestigeLevel: prev.hyperPrestigeLevel,
-                        hyperPrestigeMultiplier: prev.hyperPrestigeMultiplier,
-                        achievements: prev.achievements,
-                        quests: prev.quests,
-                        relics: prev.relics,
-                        totalAllTimeCoins: prev.totalAllTimeCoins,
-                        totalAllTimeClicks: prev.totalAllTimeClicks,
-                        playTime: prev.playTime,
-                        totalPrestigePoints: prev.totalPrestigePoints,
-                    };
-                });
-            }, []);
-
-            const hyperPrestige = useCallback(() => {
-                setState((prev) => {
-                    if (!prev) return prev;
-                    if (prev.megaPrestigeLevel < HYPER_PRESTIGE_REQ) return prev;
-                    const newHyper = prev.hyperPrestigeLevel + 1;
-                    const newHyperMult = 1 + newHyper * 100;
-                    const fresh = defaultState();
-                    return {
-                        ...fresh,
-                        hyperPrestigeLevel: newHyper,
-                        hyperPrestigeMultiplier: newHyperMult,
-                        achievements: prev.achievements,
-                        quests: prev.quests,
-                        relics: prev.relics,
-                        totalAllTimeCoins: prev.totalAllTimeCoins,
-                        totalAllTimeClicks: prev.totalAllTimeClicks,
-                        playTime: prev.playTime,
-                        totalPrestigePoints: prev.totalPrestigePoints,
-                    };
-                });
-            }, []);
-
-            const buyRelic = useCallback((id) => {
-                setState((prev) => {
-                    if (!prev) return prev;
-                    const def = RELICS.find((r) => r.id === id);
-                    if (!def) return prev;
-                    const owned = prev.relics.find((r) => r.id === id)?.owned;
-                    if (owned) return prev;
-                    if (prev.prestigePoints < def.cost) return prev;
-                    const newRelics = prev.relics.map((r) => r.id === id ? { ...r, owned: true } : r);
-                    const ns = { ...prev, prestigePoints: prev.prestigePoints - def.cost, relics: newRelics };
-                    return { ...ns, coinsPerClick: calcCPC(ns), coinsPerSecond: calcCPS(ns) };
-                });
-            }, []);
-
-            const claimQuest = useCallback((id) => {
-                setState((prev) => {
-                    if (!prev) return prev;
-                    const q = prev.quests.find((x) => x.id === id);
-                    if (!q || !q.completed || q.claimed) return prev;
-                    const def = QUESTS.find((x) => x.id === id);
-                    if (!def) return prev;
-                    let newState = { ...prev, quests: prev.quests.map((x) => x.id === id ? { ...x, claimed: true } : x) };
-                    if (def.rewardType === "coins") {
-                        newState = { ...newState, coins: newState.coins + def.reward, totalCoins: newState.totalCoins + def.reward, totalAllTimeCoins: newState.totalAllTimeCoins + def.reward };
-                    } else if (def.rewardType === "prestige_pts") {
-                        newState = { ...newState, prestigePoints: newState.prestigePoints + def.reward, totalPrestigePoints: newState.totalPrestigePoints + def.reward };
-                    }
-                    return newState;
-                });
-            }, []);
-
-            const triggerEvent = useCallback((id) => {
-                setState((prev) => {
-                    if (!prev) return prev;
-                    const ev = EVENTS.find((e) => e.id === id);
-                    if (!ev || prev.activeEvent) return prev;
-                    return {
-                        ...prev,
-                        activeEvent: { id: ev.id, endsAt: Date.now() + ev.duration * 1000 },
-                        eventMultiplier: ev.multiplier || 1,
-                        eventClickMult: ev.clickMult || 1,
-                        eventCpsMult: ev.cpsMult || 1,
-                    };
-                });
-            }, []);
-
-            const resetGame = useCallback(() => {
-                if (confirm("Удалить ВЕСЬ прогресс навсегда?")) {
-                    localStorage.removeItem(NEW_SAVE_KEY);
-                    localStorage.removeItem(SAVE_KEY);
-                    if (tg) tg.CloudStorage.removeItem(TELEGRAM_SAVE_KEY);
-                    setState(defaultState());
-                }
-            }, []);
-
-            const getCPS = () => state ? calcCPS(state) : 0;
-            const getCPC = () => state ? calcCPC(state) : 0;
-
-            const shareProgress = useCallback(() => {
-                if (!tg || !state) return;
-                tg.sendData(JSON.stringify({
-                    type: "share",
-                    coins: state.totalAllTimeCoins,
-                    prestige: state.prestigeLevel,
-                    megaPrestige: state.megaPrestigeLevel,
-                    hyperPrestige: state.hyperPrestigeLevel,
-                }));
-            }, [state]);
-
-            return { state, click, buyUpgrade, buyBuilding, depositToBank, withdrawBank, prestige, megaPrestige, hyperPrestige, buyRelic, claimQuest, triggerEvent, resetGame, getCPS, getCPC, shareProgress, isLoading };
-        };
-
-        // ─────────────────────────────────────────────
-        // LEADERBOARD
-        // ─────────────────────────────────────────────
-        const LEADERBOARD_KEY = "coin_clicker_leaderboard";
-        const saveLeaderboard = (name, score) => {
-            try {
-                const raw = localStorage.getItem(LEADERBOARD_KEY);
-                const board = raw ? JSON.parse(raw) : [];
-                const existing = board.findIndex((e) => e.name === name);
-                if (existing >= 0) { board[existing].score = Math.max(board[existing].score, score); board[existing].updated = Date.now(); }
-                else board.push({ name, score, updated: Date.now() });
-                board.sort((a, b) => b.score - a.score);
-                localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(board.slice(0, 20)));
-            } catch {}
-        };
+    function clickCoin(e) {
+        const cpc = calcCPC();
+        gameState.coins += cpc;
+        gameState.totalCoins += cpc;
+        gameState.totalClicks++;
         
-        const loadLeaderboard = () => {
-            try { return JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || "[]"); } catch { return []; }
-        };
+        const rect = document.getElementById("coinBtn").getBoundingClientRect();
+        const x = rect.left + rect.width/2;
+        const y = rect.top + rect.height/2;
+        addParticle(x, y, cpc);
+        
+        const btn = document.getElementById("coinBtn");
+        btn.style.transform = "scale(0.93)";
+        setTimeout(() => btn.style.transform = "scale(1)", 100);
+        
+        updateUI();
+        saveGame();
+        checkQuests();
+    }
 
-        // ─────────────────────────────────────────────
-        // COMPONENTS
-        // ─────────────────────────────────────────────
-        const Tab = ({ id, label, icon, active, onClick, badge }) => (
-            <button onClick={() => onClick(id)} className={`relative flex-1 min-w-fit px-2 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex flex-col items-center gap-0.5 ${active ? "bg-amber-600 text-white shadow-lg shadow-amber-900/50" : "text-amber-700 hover:text-amber-400 hover:bg-amber-900/30"}`}>
-                <span className="text-base">{icon}</span>
-                <span className="hidden sm:block">{label}</span>
-                {badge > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-black">{badge}</span>}
-            </button>
-        );
+    function buyUpgrade(id) {
+        const def = UPGRADES.find(u => u.id === id);
+        const saved = gameState.upgrades.find(u => u.id === id);
+        if (!def || !saved || saved.level >= def.maxLevel) return;
+        const cost = Math.floor(def.baseCost * Math.pow(def.mult, saved.level));
+        if (gameState.coins < cost) return;
+        gameState.coins -= cost;
+        saved.level++;
+        updateUI();
+        saveGame();
+    }
 
-        const PrestigeCard = ({ title, icon, desc, level, canDo, req, current, onDo, color, pts, ptsLabel }) => {
-            const pct = Math.min((current / req) * 100, 100);
-            return (
-                <div className={`rounded-2xl border p-4 ${color}`}>
-                    <div className="flex items-center justify-between mb-1">
-                        <span className="font-black text-sm flex items-center gap-1">{icon} {title}</span>
-                        <span className="text-xs opacity-70">Ур. {level}</span>
-                    </div>
-                    <p className="text-xs opacity-60 mb-2">{desc}</p>
-                    {pts !== undefined && <p className="text-xs mb-2 opacity-80">{ptsLabel}: <b>{pts}</b></p>}
-                    <div className="mb-2">
-                        <div className="flex justify-between text-xs opacity-50 mb-1"><span>Прогресс</span><span>{fmt(current)} / {fmt(req)}</span></div>
-                        <div className="bg-black/30 rounded-full h-2"><div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, background: "linear-gradient(90deg,#f59e0b,#fbbf24)" }} /></div>
-                    </div>
-                    <button onClick={onDo} disabled={!canDo} className={`w-full font-bold py-2 rounded-lg text-sm transition-all ${canDo ? "bg-amber-500 hover:bg-amber-400 text-black cursor-pointer" : "bg-black/20 opacity-40 cursor-not-allowed text-white"}`}>
-                        {canDo ? `✨ ${title}!` : `Нужно ${fmt(req)}`}
-                    </button>
-                </div>
-            );
-        };
+    function buyBuilding(id) {
+        const def = BUILDINGS.find(b => b.id === id);
+        const saved = gameState.buildings.find(b => b.id === id);
+        if (!def || !saved) return;
+        const cost = Math.floor(def.baseCost * Math.pow(def.mult, saved.count));
+        if (gameState.coins < cost) return;
+        gameState.coins -= cost;
+        saved.count++;
+        updateUI();
+        saveGame();
+        checkQuests();
+    }
 
-        const CoinBtn = ({ onClick, cpc, activeEv }) => {
-            const [particles, setParticles] = useState([]);
-            const [ripples, setRipples] = useState([]);
-            const [pressing, setPressing] = useState(false);
-            const pid = useRef(0);
+    function buyRelic(id) {
+        const def = RELICS.find(r => r.id === id);
+        const saved = gameState.relics.find(r => r.id === id);
+        if (!def || saved.owned) return;
+        if (gameState.prestigePoints < def.cost) return;
+        gameState.prestigePoints -= def.cost;
+        saved.owned = true;
+        updateUI();
+        saveGame();
+    }
 
-            const handleClick = (e) => {
-                onClick();
-                const id = pid.current++;
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                setParticles((p) => [...p, { id, x, y, val: cpc }]);
-                setRipples((r) => [...r, { id, x, y }]);
-                setTimeout(() => {
-                    setParticles((p) => p.filter((x) => x.id !== id));
-                    setRipples((r) => r.filter((x) => x.id !== id));
-                }, 700);
-            };
+    function doPrestige() {
+        if (gameState.totalCoins < PRESTIGE_REQ) return;
+        const pts = Math.floor(Math.log10(gameState.totalCoins / PRESTIGE_REQ) * 3 + 1);
+        gameState.prestigeLevel++;
+        gameState.prestigeMultiplier = 1 + gameState.prestigeLevel * 0.5 + gameState.megaPrestigeLevel * 2 + gameState.hyperPrestigeLevel * 10;
+        gameState.prestigePoints += pts;
+        gameState.totalPrestigePoints += pts;
+        gameState.coins = 0;
+        gameState.totalCoins = 0;
+        gameState.upgrades.forEach(u => u.level = 0);
+        gameState.buildings.forEach(b => b.count = 0);
+        updateUI();
+        saveGame();
+        checkQuests();
+    }
 
-            const glowColor = activeEv ? (activeEv.color || "#fbbf24") : "#fbbf24";
-            const emoji = activeEv?.id === "frenzy" ? "🌀" : activeEv?.id === "coin_rain" ? "🌧️" : activeEv?.id === "lucky_day" ? "🍀" : activeEv?.id === "time_boost" ? "⚡" : "💰";
+    function doMegaPrestige() {
+        if (gameState.prestigeLevel < MEGA_PRESTIGE_REQ) return;
+        gameState.megaPrestigeLevel++;
+        gameState.megaPrestigeMultiplier = 1 + gameState.megaPrestigeLevel * 5 + gameState.hyperPrestigeLevel * 50;
+        gameState.prestigeLevel = 0;
+        gameState.prestigeMultiplier = 1;
+        gameState.coins = 0;
+        gameState.totalCoins = 0;
+        gameState.upgrades.forEach(u => u.level = 0);
+        gameState.buildings.forEach(b => b.count = 0);
+        updateUI();
+        saveGame();
+    }
 
-            return (
-                <div style={{ position: "relative", width: 180, height: 180, margin: "0 auto" }}>
-                    <button
-                        onMouseDown={() => setPressing(true)}
-                        onMouseUp={() => setPressing(false)}
-                        onMouseLeave={() => setPressing(false)}
-                        onTouchStart={() => setPressing(true)}
-                        onTouchEnd={() => setPressing(false)}
-                        onClick={handleClick}
-                        style={{
-                            width: "100%", height: "100%", borderRadius: "50%",
-                            background: `radial-gradient(circle at 35% 35%, ${glowColor}aa, ${glowColor}33)`,
-                            border: `3px solid ${glowColor}88`,
-                            cursor: "pointer", fontSize: 70, display: "flex", alignItems: "center", justifyContent: "center",
-                            transform: pressing ? "scale(0.93)" : "scale(1)",
-                            transition: "transform 0.1s",
-                            animation: "glowPulse 2s ease-in-out infinite",
-                            position: "relative", overflow: "hidden",
-                            boxShadow: `0 0 ${pressing ? 20 : 40}px ${glowColor}55`,
-                            userSelect: "none",
-                        }}
-                    >
-                        <span style={{ position: "relative", zIndex: 2 }}>{emoji}</span>
-                    </button>
-                    {ripples.map((r) => (
-                        <div key={r.id} style={{ position: "absolute", borderRadius: "50%", border: `2px solid ${glowColor}88`, pointerEvents: "none", left: r.x, top: r.y, transform: "translate(-50%,-50%)", animation: "ripple 0.6s ease-out forwards" }} />
-                    ))}
-                    {particles.map((p) => (
-                        <div key={p.id} style={{ position: "absolute", left: p.x, top: p.y, color: "#fbbf24", fontWeight: 900, fontSize: 16, pointerEvents: "none", whiteSpace: "nowrap", animation: "coinPop 0.65s ease-out forwards", zIndex: 10 }}>
-                            +{fmt(p.val)}
-                        </div>
-                    ))}
-                </div>
-            );
-        };
+    function doHyperPrestige() {
+        if (gameState.megaPrestigeLevel < HYPER_PRESTIGE_REQ) return;
+        gameState.hyperPrestigeLevel++;
+        gameState.hyperPrestigeMultiplier = 1 + gameState.hyperPrestigeLevel * 100;
+        gameState.prestigeLevel = 0;
+        gameState.megaPrestigeLevel = 0;
+        gameState.prestigeMultiplier = 1;
+        gameState.megaPrestigeMultiplier = 1;
+        gameState.coins = 0;
+        gameState.totalCoins = 0;
+        gameState.upgrades.forEach(u => u.level = 0);
+        gameState.buildings.forEach(b => b.count = 0);
+        updateUI();
+        saveGame();
+    }
 
-        // ─────────────────────────────────────────────
-        // MAIN APP
-        // ─────────────────────────────────────────────
-        function App() {
-            const { state, click, buyUpgrade, buyBuilding, depositToBank, withdrawBank, prestige, megaPrestige, hyperPrestige, buyRelic, claimQuest, triggerEvent, resetGame, getCPS, getCPC, shareProgress, isLoading } = useGame();
-            const [tab, setTab] = useState("upgrades");
-            const [toasts, setToasts] = useState([]);
-            const [playerName, setPlayerName] = useState(() => localStorage.getItem("coin_clicker_name") || (tg?.initDataUnsafe?.user?.first_name || ""));
-            const [showNameInput, setShowNameInput] = useState(false);
-            const [nameInput, setNameInput] = useState("");
-            const [leaderboard, setLeaderboard] = useState(loadLeaderboard);
-            const prevAch = useRef([]);
-            const prevQ = useRef([]);
-            const toastId = useRef(0);
-            const [bankAmount, setBankAmount] = useState("");
-            const [bankPlan, setBankPlan] = useState(0);
-            const [bankError, setBankError] = useState("");
-
-            useEffect(() => {
-                if (state && prevAch.current.length === 0) {
-                    prevAch.current = state.achievements;
-                    prevQ.current = state.quests;
-                }
-            }, [state]);
-
-            const addToast = (msg, icon, color = "#f59e0b") => {
-                const id = toastId.current++;
-                setToasts((t) => [...t, { id, msg, icon, color }]);
-                setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
-            };
-
-            useEffect(() => {
-                if (!state) return;
-                state.achievements.forEach((a) => {
-                    const was = prevAch.current.find((x) => x?.id === a.id);
-                    if (a.unlocked && was && !was.unlocked) {
-                        const def = ACHIEVEMENTS.find((x) => x.id === a.id);
-                        addToast(`${def?.name}`, def?.icon || "🏆", "#8b5cf6");
-                        if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
-                    }
-                });
-                prevAch.current = state.achievements;
-            }, [state?.achievements]);
-
-            useEffect(() => {
-                if (!state) return;
-                state.quests.forEach((q) => {
-                    const was = prevQ.current.find((x) => x?.id === q.id);
-                    if (q.completed && was && !was.completed) {
-                        const def = QUESTS.find((x) => x.id === q.id);
-                        addToast(`Квест: ${def?.name}`, def?.icon || "📜", "#10b981");
-                    }
-                });
-                prevQ.current = state.quests;
-            }, [state?.quests]);
-
-            useEffect(() => {
-                if (playerName && state) {
-                    saveLeaderboard(playerName, state.totalAllTimeCoins);
-                    setLeaderboard(loadLeaderboard());
-                }
-            }, [playerName, state?.totalAllTimeCoins]);
-
-            if (isLoading || !state) {
-                return (
-                    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#0a0500 0%,#1a0800 40%,#0f0300 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fbbf24" }}>
-                        <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: 48, marginBottom: 16 }}>💰</div>
-                            <div>Загрузка...</div>
-                        </div>
-                    </div>
-                );
-            }
-
-            const cpc = getCPC();
-            const cps = getCPS();
-            const unlockedAch = state.achievements.filter((a) => a.unlocked).length;
-            const claimableQ = state.quests.filter((q) => q.completed && !q.claimed).length;
-            const activeEv = state.activeEvent ? EVENTS.find((e) => e.id === state.activeEvent.id) : null;
-            const eventSecsLeft = state.activeEvent ? Math.max(0, Math.floor((state.activeEvent.endsAt - Date.now()) / 1000)) : 0;
-
-            const formatPlayTime = (s) => {
-                const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-                if (h > 0) return `${h}ч ${m}м`;
-                if (m > 0) return `${m}м ${sec}с`;
-                return `${sec}с`;
-            };
-
-            const getDepositProgress = (dep) => Math.min(((Date.now() - dep.startTime) / 60000 / dep.duration) * 100, 100);
-            const getDepositTimeLeft = (dep) => {
-                const left = Math.max((dep.duration * 60) - (Date.now() - dep.startTime) / 1000, 0);
-                if (left < 60) return `${Math.floor(left)}с`;
-                if (left < 3600) return `${Math.floor(left / 60)}м`;
-                return `${Math.floor(left / 3600)}ч`;
-            };
-
-            const telegramUser = tg?.initDataUnsafe?.user;
-            const userAvatar = telegramUser?.photo_url;
-
-            return (
-                <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#0a0500 0%,#1a0800 40%,#0f0300 100%)", color: "#fff", fontFamily: "'Segoe UI',sans-serif", position: "relative", overflow: "hidden", paddingBottom: "env(safe-area-inset-bottom)" }}>
-                    <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>
-                        {Array.from({ length: 40 }).map((_, i) => (
-                            <div key={i} style={{ position: "absolute", borderRadius: "50%", background: "#fbbf24", opacity: 0.05 + Math.random() * 0.1, width: (1 + Math.random() * 3) + "px", height: (1 + Math.random() * 3) + "px", left: Math.random() * 100 + "%", top: Math.random() * 100 + "%", animation: `pulse ${2 + Math.random() * 4}s ease-in-out infinite alternate`, animationDelay: Math.random() * 4 + "s" }} />
-                        ))}
-                    </div>
-
-                    {activeEv && (
-                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: activeEv.color, padding: "8px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 13, fontWeight: 700, animation: "slideDown 0.4s ease" }}>
-                            <span style={{ fontSize: 20 }}>{activeEv.icon}</span>
-                            <span style={{ color: "#000" }}>{activeEv.name} — {activeEv.desc}</span>
-                            <span style={{ background: "rgba(0,0,0,0.2)", color: "#000", borderRadius: 8, padding: "1px 8px" }}>{eventSecsLeft}с</span>
-                        </div>
-                    )}
-
-                    <div style={{ position: "fixed", top: activeEv ? 48 : 16, right: 16, zIndex: 200, display: "flex", flexDirection: "column", gap: 8 }}>
-                        {toasts.map((t) => (
-                            <div key={t.id} style={{ background: `linear-gradient(135deg,${t.color}22,${t.color}44)`, border: `1px solid ${t.color}88`, borderRadius: 12, padding: "10px 16px", display: "flex", alignItems: "center", gap: 8, animation: "slideIn 0.3s ease", backdropFilter: "blur(8px)", minWidth: 200 }}>
-                                <span style={{ fontSize: 22 }}>{t.icon}</span>
-                                <div>
-                                    <div style={{ color: "#fbbf24", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
-                                        {t.color === "#8b5cf6" ? "Достижение!" : t.color === "#10b981" ? "Квест выполнен!" : "Событие!"}
-                                    </div>
-                                    <div style={{ fontWeight: 700, fontSize: 13 }}>{t.msg}</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <header style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: "1px solid rgba(251,191,36,0.15)", backdropFilter: "blur(12px)", background: "rgba(10,5,0,0.8)", padding: "10px 16px" }}>
-                        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                <span style={{ fontSize: 24 }}>💰</span>
-                                <span style={{ fontWeight: 900, color: "#fbbf24", fontSize: 18, letterSpacing: 1 }}>МонетоКликер</span>
-                                {state.hyperPrestigeLevel > 0 && <span style={{ background: "linear-gradient(90deg,#818cf8,#c084fc)", color: "#fff", fontSize: 10, padding: "2px 8px", borderRadius: 99, fontWeight: 800 }}>🌈 ГИПЕР {state.hyperPrestigeLevel}</span>}
-                                {state.megaPrestigeLevel > 0 && state.hyperPrestigeLevel === 0 && <span style={{ background: "linear-gradient(90deg,#f97316,#ef4444)", color: "#fff", fontSize: 10, padding: "2px 8px", borderRadius: 99, fontWeight: 800 }}>🔥 МЕГА {state.megaPrestigeLevel}</span>}
-                                {state.prestigeLevel > 0 && state.megaPrestigeLevel === 0 && <span style={{ background: "#7c3aed", color: "#e9d5ff", fontSize: 10, padding: "2px 8px", borderRadius: 99, fontWeight: 700 }}>⭐ Престиж {state.prestigeLevel}</span>}
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                {activeEv && <span style={{ fontSize: 18 }}>{activeEv.icon}</span>}
-                                <div style={{ textAlign: "right" }}>
-                                    <div style={{ color: "#a16207", fontSize: 10 }}>В секунду</div>
-                                    <div style={{ color: "#fbbf24", fontWeight: 700, fontSize: 13 }}>+{fmt(cps)}/с</div>
-                                </div>
-                                <button onClick={() => setShowNameInput(true)} style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 8, padding: "4px 10px", fontSize: 11, color: "#fbbf24", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-                                    {userAvatar ? <img src={userAvatar} style={{ width: 20, height: 20, borderRadius: "50%" }} alt="" /> : <span>👤</span>}
-                                    <span>{playerName || "Имя"}</span>
-                                </button>
-                            </div>
-                        </div>
-                    </header>
-
-                    {showNameInput && (
-                        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <div style={{ background: "#1a0800", border: "1px solid #92400e", borderRadius: 16, padding: 24, width: 300 }}>
-                                <h3 style={{ color: "#fbbf24", marginBottom: 12, fontWeight: 800 }}>Твоё имя в таблице лидеров</h3>
-                                <input value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder="Введи имя..." style={{ width: "100%", background: "#0a0500", border: "1px solid #92400e", borderRadius: 8, padding: "8px 12px", color: "#fff", fontSize: 14, marginBottom: 12, boxSizing: "border-box" }} />
-                                <div style={{ display: "flex", gap: 8 }}>
-                                    <button onClick={() => { if (nameInput.trim()) { const n = nameInput.trim().slice(0, 20); setPlayerName(n); localStorage.setItem("coin_clicker_name", n); } setShowNameInput(false); }} style={{ flex: 1, background: "#b45309", color: "#fff", border: "none", borderRadius: 8, padding: 8, cursor: "pointer", fontWeight: 700 }}>Сохранить</button>
-                                    <button onClick={() => setShowNameInput(false)} style={{ background: "transparent", color: "#6b7280", border: "1px solid #374151", borderRadius: 8, padding: 8, cursor: "pointer" }}>Отмена</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "16px", display: "flex", flexDirection: "column", gap: 16 }}>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 12, width: 280, flexShrink: 0 }}>
-                                <div style={{ background: "linear-gradient(135deg,rgba(120,53,15,0.5),rgba(180,83,9,0.3))", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 20, padding: 20, textAlign: "center" }}>
-                                    <div style={{ color: "#a16207", fontSize: 10, textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>💰 Монеты</div>
-                                    <div style={{ fontWeight: 900, fontSize: cps > 1e9 ? 28 : 34, color: "#fef3c7", lineHeight: 1, textShadow: "0 0 30px rgba(251,191,36,0.6)" }}>{fmt(state.coins)}</div>
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
-                                        {[["👆 Клик", fmt(cpc)], ["⚡ Сек", fmt(cps)]].map(([l, v]) => (
-                                            <div key={l} style={{ background: "rgba(120,53,15,0.4)", borderRadius: 10, padding: 8 }}>
-                                                <div style={{ color: "#92400e", fontSize: 10 }}>{l}</div>
-                                                <div style={{ color: "#fde68a", fontWeight: 700, fontSize: 13 }}>+{v}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {state.bankBalance > 0 && (
-                                        <div style={{ marginTop: 8, background: "rgba(6,78,59,0.4)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 10, padding: "6px 10px" }}>
-                                            <span style={{ color: "#6ee7b7", fontSize: 11 }}>🏦 В банке: {fmt(state.bankBalance)}</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <CoinBtn onClick={click} cpc={cpc} activeEv={activeEv} />
-
-                                <div style={{ background: "rgba(120,53,15,0.2)", border: "1px solid rgba(120,53,15,0.4)", borderRadius: 14, padding: "12px 14px", fontSize: 11 }}>
-                                    {[
-                                        ["💰 Всего заработано", fmt(state.totalCoins)],
-                                        ["📈 Всего за всё время", fmt(state.totalAllTimeCoins)],
-                                        ["🖱️ Кликов", fmt(state.totalClicks)],
-                                        ["⭐ Престиж", `${state.prestigeLevel} (x${state.prestigeMultiplier.toFixed(1)})`],
-                                        ["🔥 Мега", `${state.megaPrestigeLevel} (x${state.megaPrestigeMultiplier.toFixed(1)})`],
-                                        ["🌈 Гипер", `${state.hyperPrestigeLevel} (x${state.hyperPrestigeMultiplier.toFixed(1)})`],
-                                        ["⏱️ Время игры", formatPlayTime(state.playTime)],
-                                    ].map(([l, v]) => (
-                                        <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", borderBottom: "1px solid rgba(120,53,15,0.2)" }}>
-                                            <span style={{ color: "#92400e" }}>{l}</span>
-                                            <span style={{ color: "#fde68a", fontWeight: 700 }}>{v}</span>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div style={{ fontSize: 11 }}>
-                                    <div style={{ display: "flex", justifyContent: "space-between", color: "#92400e", marginBottom: 4 }}>
-                                        <span>🏆 Достижения</span><span>{unlockedAch}/{ACHIEVEMENTS.length}</span>
-                                    </div>
-                                    <div style={{ background: "rgba(120,53,15,0.3)", borderRadius: 99, height: 6 }}>
-                                        <div style={{ height: 6, borderRadius: 99, background: "linear-gradient(90deg,#f59e0b,#fbbf24)", transition: "width 0.5s", width: `${(unlockedAch / ACHIEVEMENTS.length) * 100}%` }} />
-                                    </div>
-                                </div>
-
-                                <div style={{ background: "linear-gradient(135deg,rgba(91,33,182,0.3),rgba(124,58,237,0.2))", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 14, padding: 12, fontSize: 11 }}>
-                                    <div style={{ color: "#a78bfa", fontWeight: 700, marginBottom: 6 }}>✨ Очки Престижа</div>
-                                    <div style={{ display: "flex", gap: 8 }}>
-                                        <div style={{ flex: 1, background: "rgba(0,0,0,0.3)", borderRadius: 8, padding: 8, textAlign: "center" }}>
-                                            <div style={{ color: "#7c3aed", fontSize: 10 }}>Сейчас</div>
-                                            <div style={{ color: "#c4b5fd", fontWeight: 800, fontSize: 16 }}>{state.prestigePoints}</div>
-                                        </div>
-                                        <div style={{ flex: 1, background: "rgba(0,0,0,0.3)", borderRadius: 8, padding: 8, textAlign: "center" }}>
-                                            <div style={{ color: "#7c3aed", fontSize: 10 }}>Всего</div>
-                                            <div style={{ color: "#c4b5fd", fontWeight: 800, fontSize: 16 }}>{state.totalPrestigePoints}</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button onClick={shareProgress} style={{ background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 10, padding: "8px 12px", fontSize: 12, color: "#a78bfa", cursor: "pointer", fontWeight: 700 }}>
-                                    📤 Поделиться прогрессом
-                                </button>
-                            </div>
-
-                            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-                                <div style={{ display: "flex", gap: 4, background: "rgba(120,53,15,0.2)", borderRadius: 14, padding: 4, overflowX: "auto" }}>
-                                    {[
-                                        { id: "upgrades", label: "Апгрейды", icon: "⚡" },
-                                        { id: "buildings", label: "Здания", icon: "🏗️" },
-                                        { id: "prestige", label: "Престиж", icon: "🌟" },
-                                        { id: "relics", label: "Реликвии", icon: "💎" },
-                                        { id: "quests", label: "Квесты", icon: "📜", badge: claimableQ },
-                                        { id: "bank", label: "Банк", icon: "🏦" },
-                                        { id: "events", label: "События", icon: "🎉" },
-                                        { id: "leaderboard", label: "Лидеры", icon: "🥇" },
-                                        { id: "achievements", label: "Трофеи", icon: "🏆" },
-                                        { id: "stats", label: "Стат", icon: "📊" },
-                                    ].map((t) => <Tab key={t.id} {...t} active={tab === t.id} onClick={setTab} badge={t.badge || 0} />)}
-                                </div>
-
-                                <div style={{ background: "rgba(120,53,15,0.15)", border: "1px solid rgba(120,53,15,0.3)", borderRadius: 20, padding: 16, minHeight: 400, maxHeight: "62vh", overflowY: "auto" }} className="custom-scroll">
-                                    {tab === "upgrades" && (
-                                        <div>
-                                            <h2 style={{ color: "#fbbf24", fontWeight: 800, fontSize: 16, marginBottom: 12 }}>⚡ Улучшения</h2>
-                                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                                {UPGRADES.map((u) => {
-                                                    const saved = state.upgrades.find((x) => x.id === u.id);
-                                                    const lv = saved?.level || 0;
-                                                    const cost = Math.floor(u.baseCost * Math.pow(u.mult, lv));
-                                                    const canBuy = state.coins >= cost && lv < u.maxLevel;
-                                                    const maxed = lv >= u.maxLevel;
-                                                    return (
-                                                        <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 12, background: maxed ? "rgba(16,185,129,0.1)" : "rgba(120,53,15,0.2)", border: `1px solid ${maxed ? "rgba(16,185,129,0.3)" : "rgba(120,53,15,0.3)"}`, borderRadius: 14, padding: "10px 14px" }}>
-                                                            <span style={{ fontSize: 28 }}>{u.icon}</span>
-                                                            <div style={{ flex: 1 }}>
-                                                                <div style={{ color: "#fde68a", fontWeight: 700, fontSize: 13 }}>{u.name}</div>
-                                                                <div style={{ color: "#92400e", fontSize: 11 }}>{u.desc}</div>
-                                                                <div style={{ marginTop: 4, background: "rgba(0,0,0,0.3)", borderRadius: 99, height: 4 }}>
-                                                                    <div style={{ height: 4, borderRadius: 99, background: maxed ? "#10b981" : "#f59e0b", width: `${(lv / u.maxLevel) * 100}%` }} />
-                                                                </div>
-                                                            </div>
-                                                            <div style={{ textAlign: "right" }}>
-                                                                <div style={{ color: "#6ee7b7", fontSize: 10, marginBottom: 4 }}>{lv}/{u.maxLevel}</div>
-                                                                <button onClick={() => buyUpgrade(u.id)} disabled={!canBuy} style={{ background: canBuy ? "#b45309" : "rgba(0,0,0,0.3)", color: canBuy ? "#fff" : "#6b7280", border: "none", borderRadius: 8, padding: "5px 12px", fontSize: 11, cursor: canBuy ? "pointer" : "default", fontWeight: 700, whiteSpace: "nowrap" }}>
-                                                                    {maxed ? "✅ Макс" : `💰 ${fmt(cost)}`}
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {tab === "buildings" && (
-                                        <div>
-                                            <h2 style={{ color: "#fbbf24", fontWeight: 800, fontSize: 16, marginBottom: 12 }}>🏗️ Здания</h2>
-                                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                                {BUILDINGS.map((b) => {
-                                                    const saved = state.buildings.find((x) => x.id === b.id);
-                                                    const cnt = saved?.count || 0;
-                                                    const cost = Math.floor(b.baseCost * Math.pow(b.mult, cnt));
-                                                    const canBuy = state.coins >= cost;
-                                                    const total = b.cps * cnt;
-                                                    return (
-                                                        <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(120,53,15,0.2)", border: "1px solid rgba(120,53,15,0.3)", borderRadius: 14, padding: "10px 14px" }}>
-                                                            <div style={{ position: "relative" }}>
-                                                                <span style={{ fontSize: 30 }}>{b.icon}</span>
-                                                                {cnt > 0 && <span style={{ position: "absolute", bottom: -4, right: -6, background: "#b45309", color: "#fff", fontSize: 9, borderRadius: 99, padding: "1px 4px", fontWeight: 800 }}>{cnt}</span>}
-                                                            </div>
-                                                            <div style={{ flex: 1 }}>
-                                                                <div style={{ color: "#fde68a", fontWeight: 700, fontSize: 13 }}>{b.name}</div>
-                                                                <div style={{ color: "#92400e", fontSize: 11 }}>{b.desc}</div>
-                                                                {cnt > 0 && <div style={{ color: "#6ee7b7", fontSize: 10 }}>Итого: +{fmt(total)}/сек</div>}
-                                                            </div>
-                                                            <div style={{ textAlign: "right" }}>
-                                                                <button onClick={() => buyBuilding(b.id)} disabled={!canBuy} style={{ background: canBuy ? "#b45309" : "rgba(0,0,0,0.3)", color: canBuy ? "#fff" : "#6b7280", border: "none", borderRadius: 8, padding: "5px 12px", fontSize: 11, cursor: canBuy ? "pointer" : "default", fontWeight: 700 }}>
-                                                                    💰 {fmt(cost)}
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {tab === "prestige" && (
-                                        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                                            <h2 style={{ color: "#fbbf24", fontWeight: 800, fontSize: 16 }}>🌟 Система Перерождений</h2>
-                                            <div style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(251,191,36,0.15)", borderRadius: 14, padding: 12, fontSize: 12, color: "#a16207", lineHeight: 1.6 }}>
-                                                <b style={{ color: "#fbbf24" }}>⭐ Престиж</b> — сброс за множитель к доходу. Даёт Очки Престижа.<br />
-                                                <b style={{ color: "#f97316" }}>🔥 Мега-Перерождение</b> — нужно 10 престижей. Огромный бонус.<br />
-                                                <b style={{ color: "#818cf8" }}>🌈 Гипер-Перерождение</b> — нужно 3 Мега-Перерождения. Убийственный бонус.
-                                            </div>
-                                            <PrestigeCard
-                                                title="Престиж" icon="⭐" desc="Сброс прогресса за постоянный множитель дохода"
-                                                level={state.prestigeLevel} canDo={state.totalCoins >= PRESTIGE_REQ}
-                                                req={PRESTIGE_REQ} current={state.totalCoins}
-                                                onDo={prestige}
-                                                color="bg-purple-900/30 border-purple-700 text-purple-200"
-                                                pts={state.prestigePoints} ptsLabel="Очки Престижа"
-                                            />
-                                            <PrestigeCard
-                                                title="Мега-Перерождение" icon="🔥"
-                                                desc={`Полный сброс. Нужно ${MEGA_PRESTIGE_REQ} престижей. x${(1 + (state.megaPrestigeLevel + 1) * 5).toFixed(0)} ко всему`}
-                                                level={state.megaPrestigeLevel} canDo={state.prestigeLevel >= MEGA_PRESTIGE_REQ}
-                                                req={MEGA_PRESTIGE_REQ} current={state.prestigeLevel}
-                                                onDo={megaPrestige}
-                                                color="bg-orange-900/30 border-orange-700 text-orange-200"
-                                                pts={state.megaPrestigePoints} ptsLabel="Мега-Очки"
-                                            />
-                                            <PrestigeCard
-                                                title="Гипер-Перерождение" icon="🌈"
-                                                desc={`Мегасброс! Нужно ${HYPER_PRESTIGE_REQ} Мега-Перерождений. x${(1 + (state.hyperPrestigeLevel + 1) * 100).toFixed(0)} ко всему!!!`}
-                                                level={state.hyperPrestigeLevel} canDo={state.megaPrestigeLevel >= HYPER_PRESTIGE_REQ}
-                                                req={HYPER_PRESTIGE_REQ} current={state.megaPrestigeLevel}
-                                                onDo={hyperPrestige}
-                                                color="bg-indigo-900/30 border-indigo-500 text-indigo-200"
-                                            />
-                                        </div>
-                                    )}
-
-                                    {tab === "relics" && (
-                                        <div>
-                                            <h2 style={{ color: "#fbbf24", fontWeight: 800, fontSize: 16, marginBottom: 4 }}>💎 Реликвии</h2>
-                                            <p style={{ color: "#92400e", fontSize: 11, marginBottom: 12 }}>Покупаются за Очки Престижа. Бонус навсегда, не сбрасывается!</p>
-                                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 10 }}>
-                                                {RELICS.map((r) => {
-                                                    const owned = state.relics.find((x) => x.id === r.id)?.owned;
-                                                    const canBuy = !owned && state.prestigePoints >= r.cost;
-                                                    return (
-                                                        <div key={r.id} style={{ background: owned ? "rgba(16,185,129,0.15)" : "rgba(120,53,15,0.2)", border: `1px solid ${owned ? "rgba(16,185,129,0.4)" : "rgba(120,53,15,0.3)"}`, borderRadius: 14, padding: 14 }}>
-                                                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                                                                <span style={{ fontSize: 28 }}>{r.icon}</span>
-                                                                <div>
-                                                                    <div style={{ color: "#fde68a", fontWeight: 700, fontSize: 13 }}>{r.name}</div>
-                                                                    <div style={{ color: "#92400e", fontSize: 10 }}>{r.desc}</div>
-                                                                </div>
-                                                            </div>
-                                                            <button onClick={() => buyRelic(r.id)} disabled={owned || !canBuy} style={{ width: "100%", background: owned ? "rgba(16,185,129,0.2)" : canBuy ? "#7c3aed" : "rgba(0,0,0,0.3)", color: owned ? "#6ee7b7" : canBuy ? "#fff" : "#6b7280", border: "none", borderRadius: 8, padding: "6px", fontSize: 12, cursor: owned || !canBuy ? "default" : "pointer", fontWeight: 700 }}>
-                                                                {owned ? "✅ Получено" : `✨ ${r.cost} очков`}
-                                                            </button>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {tab === "quests" && (
-                                        <div>
-                                            <h2 style={{ color: "#fbbf24", fontWeight: 800, fontSize: 16, marginBottom: 12 }}>📜 Квесты</h2>
-                                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                                {QUESTS.map((qDef) => {
-                                                    const q = state.quests.find((x) => x.id === qDef.id) || {};
-                                                    const pct = qDef.condition(state) ? 100 : 0;
-                                                    return (
-                                                        <div key={qDef.id} style={{ display: "flex", alignItems: "center", gap: 12, background: q.claimed ? "rgba(16,185,129,0.1)" : q.completed ? "rgba(251,191,36,0.1)" : "rgba(120,53,15,0.2)", border: `1px solid ${q.claimed ? "rgba(16,185,129,0.3)" : q.completed ? "rgba(251,191,36,0.3)" : "rgba(120,53,15,0.3)"}`, borderRadius: 14, padding: "10px 14px" }}>
-                                                            <span style={{ fontSize: 24 }}>{qDef.icon}</span>
-                                                            <div style={{ flex: 1 }}>
-                                                                <div style={{ color: "#fde68a", fontWeight: 700, fontSize: 13 }}>{qDef.name}</div>
-                                                                <div style={{ color: "#92400e", fontSize: 11 }}>{qDef.desc}</div>
-                                                                <div style={{ marginTop: 4, background: "rgba(0,0,0,0.3)", borderRadius: 99, height: 3 }}>
-                                                                    <div style={{ height: 3, borderRadius: 99, background: "#f59e0b", width: `${pct}%`, transition: "width 0.5s" }} />
-                                                                </div>
-                                                            </div>
-                                                            <div style={{ textAlign: "right", minWidth: 90 }}>
-                                                                <div style={{ color: "#6ee7b7", fontSize: 10, marginBottom: 4 }}>
-                                                                    {qDef.rewardType === "coins" ? `💰 ${fmt(qDef.reward)}` : `✨ ${qDef.reward} очков`}
-                                                                </div>
-                                                                <button onClick={() => claimQuest(qDef.id)} disabled={!q.completed || q.claimed} style={{ background: q.claimed ? "rgba(16,185,129,0.2)" : q.completed ? "#b45309" : "rgba(0,0,0,0.3)", color: q.claimed ? "#6ee7b7" : q.completed ? "#fff" : "#6b7280", border: "none", borderRadius: 8, padding: "4px 10px", fontSize: 11, cursor: q.completed && !q.claimed ? "pointer" : "default", fontWeight: 700 }}>
-                                                                    {q.claimed ? "✅ Забрано" : q.completed ? "🎁 Забрать!" : "Заблок."}
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {tab === "bank" && (
-                                        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                                            <h2 style={{ color: "#fbbf24", fontWeight: 800, fontSize: 16 }}>🏦 Банк Монет</h2>
-                                            <div style={{ background: "rgba(6,78,59,0.3)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 16, padding: 16 }}>
-                                                <div style={{ color: "#6ee7b7", fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>Готово к снятию</div>
-                                                <div style={{ fontSize: 32, fontWeight: 900, color: "#34d399" }}>{fmt(state.bankBalance)} 💰</div>
-                                                {state.bankBalance > 0 && <button onClick={withdrawBank} style={{ marginTop: 8, background: "#059669", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", cursor: "pointer", fontWeight: 700 }}>💵 Снять всё</button>}
-                                            </div>
-                                            <div style={{ background: "rgba(120,53,15,0.25)", border: "1px solid rgba(120,53,15,0.4)", borderRadius: 16, padding: 16 }}>
-                                                <div style={{ color: "#fbbf24", fontWeight: 700, marginBottom: 10 }}>📥 Открыть вклад</div>
-                                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 10 }}>
-                                                    {BANK_DEPOSITS.map((p, i) => (
-                                                        <button key={i} onClick={() => setBankPlan(i)} style={{ border: `1px solid ${bankPlan === i ? "#fbbf24" : "rgba(120,53,15,0.5)"}`, background: bankPlan === i ? "rgba(251,191,36,0.15)" : "rgba(0,0,0,0.2)", borderRadius: 8, padding: 8, cursor: "pointer", textAlign: "center" }}>
-                                                            <div style={{ color: "#fde68a", fontSize: 11, fontWeight: 700 }}>{p.label}</div>
-                                                            <div style={{ color: "#6ee7b7", fontSize: 12, fontWeight: 800 }}>+{p.interest}%</div>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-                                                    <input value={bankAmount} onChange={(e) => { setBankAmount(e.target.value); setBankError(""); }} placeholder="Сумма..." style={{ flex: 1, background: "rgba(0,0,0,0.4)", border: "1px solid rgba(120,53,15,0.5)", borderRadius: 8, padding: "7px 12px", color: "#fff", fontSize: 13 }} />
-                                                    <button onClick={() => setBankAmount(String(Math.floor(state.coins)))} style={{ background: "rgba(120,53,15,0.5)", color: "#fde68a", border: "none", borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>Макс</button>
-                                                </div>
-                                                {bankError && <div style={{ color: "#ef4444", fontSize: 11, marginBottom: 6 }}>{bankError}</div>}
-                                                <button onClick={() => {
-                                                    const num = parseFloat(bankAmount);
-                                                    if (!num || num <= 0) { setBankError("Введите сумму!"); return; }
-                                                    if (num > state.coins) { setBankError("Недостаточно монет!"); return; }
-                                                    const p = BANK_DEPOSITS[bankPlan];
-                                                    depositToBank(Math.floor(num), p.duration, p.interest, p.label);
-                                                    setBankAmount(""); setBankError("");
-                                                }} style={{ width: "100%", background: "#b45309", color: "#fff", border: "none", borderRadius: 8, padding: 8, cursor: "pointer", fontWeight: 700 }}>
-                                                    Положить в банк
-                                                </button>
-                                            </div>
-                                            {state.bankDeposits.length > 0 && (
-                                                <div>
-                                                    <div style={{ color: "#fbbf24", fontWeight: 700, marginBottom: 8 }}>📊 Активные вклады</div>
-                                                    {state.bankDeposits.map((dep) => (
-                                                        <div key={dep.id} style={{ background: "rgba(120,53,15,0.2)", border: "1px solid rgba(120,53,15,0.3)", borderRadius: 12, padding: 12, marginBottom: 8 }}>
-                                                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                                                                <span style={{ color: "#fde68a", fontWeight: 700, fontSize: 13 }}>{dep.label}</span>
-                                                                <span style={{ color: "#6ee7b7", fontSize: 11 }}>+{dep.interest}%</span>
-                                                            </div>
-                                                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#92400e", marginBottom: 4 }}>
-                                                                <span>Вложено: {fmt(dep.amount)}</span><span>Получите: {fmt(dep.amount * (1 + dep.interest / 100))}</span>
-                                                            </div>
-                                                            <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: 99, height: 5 }}>
-                                                                <div style={{ height: 5, borderRadius: 99, background: "linear-gradient(90deg,#f59e0b,#6ee7b7)", width: `${getDepositProgress(dep)}%`, transition: "width 1s" }} />
-                                                            </div>
-                                                            <div style={{ textAlign: "right", fontSize: 10, color: "#92400e", marginTop: 2 }}>
-                                                                {getDepositProgress(dep) >= 100 ? "Готово! ✅" : `Осталось: ${getDepositTimeLeft(dep)}`}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {tab === "events" && (
-                                        <div>
-                                            <h2 style={{ color: "#fbbf24", fontWeight: 800, fontSize: 16, marginBottom: 4 }}>🎉 Случайные События</h2>
-                                            <p style={{ color: "#92400e", fontSize: 11, marginBottom: 12 }}>События появляются случайно во время игры. Следи за баннером сверху!</p>
-                                            {activeEv && (
-                                                <div style={{ background: `${activeEv.color}22`, border: `1px solid ${activeEv.color}66`, borderRadius: 16, padding: 16, marginBottom: 12 }}>
-                                                    <div style={{ fontSize: 32, marginBottom: 8 }}>{activeEv.icon}</div>
-                                                    <div style={{ color: activeEv.color, fontWeight: 800, fontSize: 18 }}>{activeEv.name}</div>
-                                                    <div style={{ color: "#e5e7eb", fontSize: 13, marginTop: 4 }}>{activeEv.desc}</div>
-                                                    <div style={{ marginTop: 10, background: "rgba(0,0,0,0.3)", borderRadius: 99, height: 8 }}>
-                                                        <div style={{ height: 8, borderRadius: 99, background: activeEv.color, transition: "width 1s", width: `${(eventSecsLeft / (EVENTS.find((e) => e.id === activeEv.id)?.duration || 1)) * 100}%` }} />
-                                                    </div>
-                                                    <div style={{ color: "#9ca3af", fontSize: 11, textAlign: "right", marginTop: 4 }}>{eventSecsLeft}с осталось</div>
-                                                </div>
-                                            )}
-                                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 10 }}>
-                                                {EVENTS.map((ev) => (
-                                                    <div key={ev.id} style={{ background: `${ev.color}11`, border: `1px solid ${ev.color}33`, borderRadius: 14, padding: 14 }}>
-                                                        <span style={{ fontSize: 30 }}>{ev.icon}</span>
-                                                        <div style={{ color: ev.color, fontWeight: 700, marginTop: 6 }}>{ev.name}</div>
-                                                        <div style={{ color: "#9ca3af", fontSize: 11, marginTop: 4 }}>{ev.desc}</div>
-                                                        <div style={{ color: "#6b7280", fontSize: 10, marginTop: 4 }}>Длит. {ev.duration}с</div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {tab === "leaderboard" && (
-                                        <div>
-                                            <h2 style={{ color: "#fbbf24", fontWeight: 800, fontSize: 16, marginBottom: 4 }}>🥇 Таблица Лидеров</h2>
-                                            <p style={{ color: "#92400e", fontSize: 11, marginBottom: 12 }}>Локальная доска — все игроки на этом устройстве. Установи имя для участия!</p>
-                                            {!playerName && <div style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 12, padding: 12, marginBottom: 12, textAlign: "center" }}>
-                                                <div style={{ color: "#fbbf24", marginBottom: 8 }}>Введи своё имя, чтобы попасть в рейтинг!</div>
-                                                <button onClick={() => setShowNameInput(true)} style={{ background: "#b45309", color: "#fff", border: "none", borderRadius: 8, padding: "7px 18px", cursor: "pointer", fontWeight: 700 }}>👤 Ввести имя</button>
-                                            </div>}
-                                            {leaderboard.length === 0 ? (
-                                                <div style={{ color: "#6b7280", textAlign: "center", marginTop: 40 }}>Пока пусто. Будь первым!</div>
-                                            ) : (
-                                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                                    {leaderboard.map((entry, i) => {
-                                                        const medals = ["🥇", "🥈", "🥉"];
-                                                        const isMe = entry.name === playerName;
-                                                        return (
-                                                            <div key={entry.name} style={{ display: "flex", alignItems: "center", gap: 12, background: isMe ? "rgba(251,191,36,0.15)" : "rgba(120,53,15,0.2)", border: `1px solid ${isMe ? "rgba(251,191,36,0.4)" : "rgba(120,53,15,0.3)"}`, borderRadius: 12, padding: "10px 14px" }}>
-                                                                <span style={{ fontSize: 20, minWidth: 24, textAlign: "center" }}>{medals[i] || `#${i + 1}`}</span>
-                                                                <span style={{ flex: 1, fontWeight: 700, color: isMe ? "#fbbf24" : "#fde68a" }}>{entry.name}{isMe ? " 👈" : ""}</span>
-                                                                <span style={{ color: "#6ee7b7", fontWeight: 700, fontSize: 13 }}>{fmt(entry.score)}</span>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-                                            <button onClick={() => { if (playerName) { saveLeaderboard(playerName, state.totalAllTimeCoins); setLeaderboard(loadLeaderboard()); } }} style={{ marginTop: 12, background: "rgba(120,53,15,0.4)", color: "#fde68a", border: "1px solid rgba(120,53,15,0.5)", borderRadius: 8, padding: "7px 16px", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
-                                                🔄 Обновить
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    {tab === "achievements" && (
-                                        <div>
-                                            <h2 style={{ color: "#fbbf24", fontWeight: 800, fontSize: 16, marginBottom: 12 }}>🏆 Достижения ({unlockedAch}/{ACHIEVEMENTS.length})</h2>
-                                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 8 }}>
-                                                {ACHIEVEMENTS.map((a) => {
-                                                    const unlocked = state.achievements.find((x) => x.id === a.id)?.unlocked;
-                                                    return (
-                                                        <div key={a.id} title={a.desc} style={{ background: unlocked ? "rgba(139,92,246,0.2)" : "rgba(0,0,0,0.3)", border: `1px solid ${unlocked ? "rgba(139,92,246,0.4)" : "rgba(120,53,15,0.2)"}`, borderRadius: 12, padding: 12, textAlign: "center", opacity: unlocked ? 1 : 0.4 }}>
-                                                            <div style={{ fontSize: 28, marginBottom: 4, filter: unlocked ? "none" : "grayscale(1)" }}>{a.icon}</div>
-                                                            <div style={{ color: "#fde68a", fontWeight: 700, fontSize: 11 }}>{a.name}</div>
-                                                            <div style={{ color: "#92400e", fontSize: 10, marginTop: 2 }}>{a.desc}</div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {tab === "stats" && (
-                                        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                                            <h2 style={{ color: "#fbbf24", fontWeight: 800, fontSize: 16 }}>📊 Статистика</h2>
-                                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                                                {[
-                                                    ["💰 Монет сейчас", fmt(state.coins)],
-                                                    ["📈 Всего заработано", fmt(state.totalCoins)],
-                                                    ["🌍 За всё время", fmt(state.totalAllTimeCoins)],
-                                                    ["👆 За клик", fmt(cpc)],
-                                                    ["⚡ В секунду", fmt(cps)],
-                                                    ["🖱️ Кликов", fmt(state.totalClicks)],
-                                                    ["🖱️ Кликов всего", fmt(state.totalAllTimeClicks)],
-                                                    ["⭐ Престиж", state.prestigeLevel],
-                                                    ["🔥 Мега", state.megaPrestigeLevel],
-                                                    ["🌈 Гипер", state.hyperPrestigeLevel],
-                                                    ["✨ Очков престижа", state.prestigePoints],
-                                                    ["⏱️ Время игры", formatPlayTime(state.playTime)],
-                                                ].map(([l, v]) => (
-                                                    <div key={l} style={{ background: "rgba(120,53,15,0.25)", border: "1px solid rgba(120,53,15,0.35)", borderRadius: 12, padding: 12 }}>
-                                                        <div style={{ color: "#92400e", fontSize: 10 }}>{l}</div>
-                                                        <div style={{ color: "#fde68a", fontWeight: 700, fontSize: 16, marginTop: 2 }}>{v}</div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <div style={{ border: "1px solid rgba(239,68,68,0.3)", borderRadius: 14, padding: 12 }}>
-                                                <div style={{ color: "#ef4444", fontSize: 11, marginBottom: 8 }}>⚠️ Опасная зона</div>
-                                                <button onClick={resetGame} style={{ width: "100%", background: "rgba(239,68,68,0.2)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: 8, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>
-                                                    🗑️ Сбросить всё
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
+    function claimQuest(id) {
+        const q = gameState.quests.find(x => x.id === id);
+        const def = QUESTS.find(x => x.id === id);
+        if (!q || !q.completed || q.claimed) return;
+        q.claimed = true;
+        if (def.rewardType === "coins") {
+            gameState.coins += def.reward;
+            gameState.totalCoins += def.reward;
+        } else if (def.rewardType === "prestige") {
+            gameState.prestigePoints += def.reward;
+            gameState.totalPrestigePoints += def.reward;
         }
+        updateUI();
+        saveGame();
+    }
 
-        const root = createRoot(document.getElementById("root"));
-        root.render(React.createElement(App));
-    </script>
+    function checkQuests() {
+        let changed = false;
+        gameState.quests.forEach(q => {
+            if (q.completed) return;
+            const def = QUESTS.find(x => x.id === q.id);
+            if (def && def.condition(gameState)) {
+                q.completed = true;
+                changed = true;
+            }
+        });
+        if (changed) {
+            updateUI();
+            saveGame();
+        }
+    }
+
+    // Банк
+    function depositToBank(amount, duration, interest, label) {
+        if (gameState.coins < amount) return;
+        gameState.coins -= amount;
+        gameState.bankDeposits.push({
+            id: Date.now(),
+            amount: amount,
+            interest: interest,
+            startTime: Date.now(),
+            duration: duration,
+            label: label
+        });
+        saveGame();
+        updateUI();
+    }
+
+    function withdrawBank() {
+        if (gameState.bankBalance <= 0) return;
+        gameState.coins += gameState.bankBalance;
+        gameState.totalCoins += gameState.bankBalance;
+        gameState.bankBalance = 0;
+        saveGame();
+        updateUI();
+    }
+
+    function checkBankMaturity() {
+        let changed = false;
+        const now = Date.now();
+        let newBalance = gameState.bankBalance;
+        const remaining = [];
+        gameState.bankDeposits.forEach(dep => {
+            const elapsed = (now - dep.startTime) / 60000;
+            if (elapsed >= dep.duration) {
+                newBalance += dep.amount * (1 + dep.interest / 100);
+                changed = true;
+            } else {
+                remaining.push(dep);
+            }
+        });
+        if (changed) {
+            gameState.bankBalance = newBalance;
+            gameState.bankDeposits = remaining;
+            saveGame();
+            updateUI();
+        }
+    }
+
+    // События
+    function checkEvent() {
+        if (gameState.activeEvent) {
+            if (Date.now() >= gameState.eventEndsAt) {
+                gameState.activeEvent = null;
+                gameState.eventMultiplier = 1;
+                gameState.eventClickMult = 1;
+                gameState.eventCpsMult = 1;
+                document.getElementById("eventBanner")?.remove();
+                updateUI();
+                saveGame();
+            }
+        } else if (gameState.totalCoins > 1000 && Math.random() < 0.003) {
+            const ev = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+            gameState.activeEvent = ev.id;
+            gameState.eventEndsAt = Date.now() + ev.duration * 1000;
+            gameState.eventMultiplier = ev.multiplier || 1;
+            gameState.eventClickMult = ev.clickMult || 1;
+            gameState.eventCpsMult = ev.cpsMult || 1;
+            
+            const banner = document.createElement('div');
+            banner.id = "eventBanner";
+            banner.className = "event-banner";
+            banner.style.background = ev.color;
+            banner.innerHTML = `${ev.icon} ${ev.name} — ${ev.desc} <span id="eventTimer"></span>`;
+            document.body.insertBefore(banner, document.body.firstChild);
+            updateUI();
+            saveGame();
+        }
+        
+        if (gameState.activeEvent) {
+            const banner = document.getElementById("eventBanner");
+            if (banner) {
+                const remaining = Math.max(0, Math.floor((gameState.eventEndsAt - Date.now()) / 1000));
+                const timer = banner.querySelector("#eventTimer");
+                if (timer) timer.innerText = `${remaining}с`;
+            }
+        }
+    }
+
+    // Пассивный доход
+    let lastTick = Date.now();
+    function passiveIncome() {
+        const now = Date.now();
+        const delta = Math.min((now - lastTick) / 1000, 0.1);
+        if (delta >= 0.05) {
+            const cps = calcCPS();
+            const earned = cps * delta;
+            if (earned > 0) {
+                gameState.coins += earned;
+                gameState.totalCoins += earned;
+                updateUI();
+                saveGame();
+            }
+            lastTick = now;
+        }
+        requestAnimationFrame(passiveIncome);
+    }
+
+    // Обновление UI
+    let currentTab = "upgrades";
+
+    function updateUI() {
+        document.getElementById("coins").innerText = formatNumber(gameState.coins);
+        document.getElementById("cpc").innerText = formatNumber(calcCPC());
+        document.getElementById("cps").innerText = formatNumber(calcCPS());
+        document.getElementById("prestigePoints").innerHTML = `✨ Очки престижа: ${gameState.prestigePoints} (всего: ${gameState.totalPrestigePoints})`;
+        if (gameState.bankBalance > 0) {
+            document.getElementById("bankBalance").innerHTML = `🏦 В банке: ${formatNumber(gameState.bankBalance)}`;
+        } else {
+            document.getElementById("bankBalance").innerHTML = "";
+        }
+        renderTab(currentTab);
+    }
+
+    function renderTab(tab) {
+        currentTab = tab;
+        const container = document.getElementById("tabContent");
+        if (!container) return;
+        
+        if (tab === "upgrades") {
+            container.innerHTML = `<h2>⚡ Улучшения</h2>`;
+            UPGRADES.forEach(u => {
+                const saved = gameState.upgrades.find(x => x.id === u.id);
+                const level = saved?.level || 0;
+                const cost = Math.floor(u.baseCost * Math.pow(u.mult, level));
+                const maxed = level >= u.maxLevel;
+                container.innerHTML += `
+                    <div class="item">
+                        <div class="item-icon">${u.icon}</div>
+                        <div class="item-info">
+                            <div class="item-name">${u.name}</div>
+                            <div class="item-desc">${u.cpc > 0 ? `+${u.cpc} за клик` : `+${u.cps}/сек`}</div>
+                            <div class="item-level">Ур. ${level}/${u.maxLevel}</div>
+                        </div>
+                        <button class="buy-btn" onclick="buyUpgrade('${u.id}')" ${maxed || gameState.coins < cost ? 'disabled' : ''}>
+                            ${maxed ? '✅ Макс' : `💰 ${formatNumber(cost)}`}
+                        </button>
+                    </div>
+                `;
+            });
+        }
+        else if (tab === "buildings") {
+            container.innerHTML = `<h2>🏗️ Здания</h2>`;
+            BUILDINGS.forEach(b => {
+                const saved = gameState.buildings.find(x => x.id === b.id);
+                const count = saved?.count || 0;
+                const cost = Math.floor(b.baseCost * Math.pow(b.mult, count));
+                const total = b.cps * count;
+                container.innerHTML += `
+                    <div class="item">
+                        <div class="item-icon">${b.icon}</div>
+                        <div class="item-info">
+                            <div class="item-name">${b.name}</div>
+                            <div class="item-desc">+${formatNumber(b.cps)}/сек</div>
+                            ${count > 0 ? `<div class="item-level">Кол-во: ${count} (${formatNumber(total)}/сек)</div>` : ''}
+                        </div>
+                        <button class="buy-btn" onclick="buyBuilding('${b.id}')" ${gameState.coins < cost ? 'disabled' : ''}>
+                            💰 ${formatNumber(cost)}
+                        </button>
+                    </div>
+                `;
+            });
+        }
+        else if (tab === "prestige") {
+            const progress = Math.min((gameState.totalCoins / PRESTIGE_REQ) * 100, 100);
+            const megaProgress = Math.min((gameState.prestigeLevel / MEGA_PRESTIGE_REQ) * 100, 100);
+            const hyperProgress = Math.min((gameState.megaPrestigeLevel / HYPER_PRESTIGE_REQ) * 100, 100);
+            container.innerHTML = `
+                <h2>🌟 Система перерождений</h2>
+                <div class="prestige-card">
+                    <div style="display:flex; justify-content:space-between"><span>⭐ Престиж: ${gameState.prestigeLevel}</span><span>✨ Множитель: x${gameState.prestigeMultiplier.toFixed(1)}</span></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+                    <div style="font-size:11px">${formatNumber(gameState.totalCoins)} / ${formatNumber(PRESTIGE_REQ)}</div>
+                    <button class="buy-btn" onclick="doPrestige()" ${gameState.totalCoins < PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">✨ Переродиться</button>
+                </div>
+                <div class="prestige-card">
+                    <div style="display:flex; justify-content:space-between"><span>🔥 Мега-престиж: ${gameState.megaPrestigeLevel}</span><span>Множитель: x${gameState.megaPrestigeMultiplier.toFixed(1)}</span></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:${megaProgress}%"></div></div>
+                    <div style="font-size:11px">${gameState.prestigeLevel} / ${MEGA_PRESTIGE_REQ} престижей</div>
+                    <button class="buy-btn" onclick="doMegaPrestige()" ${gameState.prestigeLevel < MEGA_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🔥 Мега-перерождение</button>
+                </div>
+                <div class="prestige-card">
+                    <div style="display:flex; justify-content:space-between"><span>🌈 Гипер-престиж: ${gameState.hyperPrestigeLevel}</span><span>Множитель: x${gameState.hyperPrestigeMultiplier.toFixed(1)}</span></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:${hyperProgress}%"></div></div>
+                    <div style="font-size:11px">${gameState.megaPrestigeLevel} / ${HYPER_PRESTIGE_REQ} мега-престижей</div>
+                    <button class="buy-btn" onclick="doHyperPrestige()" ${gameState.megaPrestigeLevel < HYPER_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🌈 Гипер-перерождение</button>
+                </div>
+            `;
+        }
+        else if (tab === "relics") {
+            container.innerHTML = `<h2>💎 Реликвии</h2><div style="display:flex; flex-wrap:wrap">`;
+            RELICS.forEach(r => {
+                const owned = gameState.relics.find(x => x.id === r.id)?.owned;
+                container.innerHTML += `
+                    <div class="relic-item">
+                        <div style="font-size:32px">${r.icon}</div>
+                        <div style="font-weight:700">${r.name}</div>
+                        <div style="font-size:10px; color:#92400e">${r.type === 'multiplier' ? 'x' + r.value : '+' + Math.round((r.value-1)*100) + '%'}</div>
+                        <button class="buy-btn" onclick="buyRelic('${r.id}')" ${owned || gameState.prestigePoints < r.cost ? 'disabled' : ''} style="margin-top:5px">
+                            ${owned ? '✅ Получено' : `✨ ${r.cost} очков`}
+                        </button>
+                    </div>
+                `;
+            });
+            container.innerHTML += `</div><div style="margin-top:12px; font-size:11px; color:#92400e">⭐ Реликвии покупаются за очки престижа и не сбрасываются</div>`;
+        }
+        else if (tab === "quests") {
+            container.innerHTML = `<h2>📜 Квесты</h2>`;
+            QUESTS.forEach(qDef => {
+                const q = gameState.quests.find(x => x.id === qDef.id);
+                const completed = q?.completed;
+                const claimed = q?.claimed;
+                container.innerHTML += `
+                    <div class="quest-item">
+                        <div style="display:flex; align-items:center; gap:8px">
+                            <span style="font-size:24px">${qDef.icon}</span>
+                            <div style="flex:1">
+                                <div style="font-weight:700">${qDef.name}</div>
+                                <div style="font-size:11px; color:#92400e">${qDef.desc}</div>
+                                <div style="font-size:10px; color:#6ee7b7">Награда: ${qDef.rewardType === 'coins' ? formatNumber(qDef.reward) + ' монет' : qDef.reward + ' очков престижа'}</div>
+                            </div>
+                            <button class="buy-btn" onclick="claimQuest('${qDef.id}')" ${!completed || claimed ? 'disabled' : ''}>
+                                ${claimed ? '✅ Забрано' : completed ? '🎁 Забрать' : '🔒 Закрыт'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        else if (tab === "bank") {
+            container.innerHTML = `
+                <h2>🏦 Банк</h2>
+                <div class="bank-deposit">
+                    <div style="font-size:20px">💰 ${formatNumber(gameState.bankBalance)}</div>
+                    <div style="font-size:12px">Готово к снятию</div>
+                    <button class="buy-btn" onclick="withdrawBank()" ${gameState.bankBalance <= 0 ? 'disabled' : ''} style="margin-top:8px">💵 Снять всё</button>
+                </div>
+                <h2 style="margin-top:12px">📥 Вклады</h2>
+                <div id="depositsList"></div>
+            `;
+            const depositsDiv = document.getElementById("depositsList");
+            if (depositsDiv) {
+                depositsDiv.innerHTML = "";
+                BANK_DEPOSITS.forEach((dep, i) => {
+                    depositsDiv.innerHTML += `
+                        <button onclick="depositPrompt(${i})" style="background:#b45309; border:none; border-radius:8px; padding:8px; margin:4px; color:white">
+                            ${dep.label} +${dep.interest}%
+                        </button>
+                    `;
+                });
+            }
+            if (gameState.bankDeposits.length > 0) {
+                container.innerHTML += `<h2 style="margin-top:12px">📊 Активные</h2>`;
+                gameState.bankDeposits.forEach(dep => {
+                    const elapsed = (Date.now() - dep.startTime) / 60000;
+                    const progress = Math.min((elapsed / dep.duration) * 100, 100);
+                    container.innerHTML += `
+                        <div class="bank-deposit">
+                            <div>${dep.label} +${dep.interest}%</div>
+                            <div>Вложено: ${formatNumber(dep.amount)} → Получите: ${formatNumber(dep.amount * (1 + dep.interest/100))}</div>
+                            <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+                        </div>
+                    `;
+                });
+            }
+        }
+        else if (tab === "events") {
+            container.innerHTML = `<h2>🎉 Случайные события</h2>`;
+            if (gameState.activeEvent) {
+                const ev = EVENTS.find(e => e.id === gameState.activeEvent);
+                const remaining = Math.max(0, Math.floor((gameState.eventEndsAt - Date.now()) / 1000));
+                container.innerHTML += `
+                    <div class="prestige-card" style="background:${ev?.color}22; border-color:${ev?.color}">
+                        <div style="font-size:32px">${ev?.icon}</div>
+                        <div style="font-weight:700">${ev?.name}</div>
+                        <div>${ev?.desc}</div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${(remaining/ev?.duration)*100}%; background:${ev?.color}"></div></div>
+                        <div>Осталось: ${remaining}с</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML += `<div style="color:#92400e">События появляются случайно во время игры. Следи за баннером!</div>`;
+            }
+            container.innerHTML += `<h2 style="margin-top:12px">📋 Список событий</h2>`;
+            EVENTS.forEach(ev => {
+                container.innerHTML += `
+                    <div class="item" style="background:${ev.color}11; border-color:${ev.color}33">
+                        <div class="item-icon">${ev.icon}</div>
+                        <div class="item-info">
+                            <div class="item-name">${ev.name}</div>
+                            <div class="item-desc">${ev.desc}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        else if (tab === "stats") {
+            const cpc = calcCPC();
+            const cps = calcCPS();
+            container.innerHTML = `
+                <h2>📊 Статистика</h2>
+                <div class="item"><div class="item-info"><div class="item-name">💰 Монет сейчас</div></div><div>${formatNumber(gameState.coins)}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">📈 Всего заработано</div></div><div>${formatNumber(gameState.totalCoins)}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">🖱️ Кликов</div></div><div>${formatNumber(gameState.totalClicks)}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">👆 За клик</div></div><div>+${formatNumber(cpc)}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">⚡ В секунду</div></div><div>+${formatNumber(cps)}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">⭐ Престиж</div></div><div>${gameState.prestigeLevel} (x${gameState.prestigeMultiplier.toFixed(1)})</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">🔥 Мега-престиж</div></div><div>${gameState.megaPrestigeLevel} (x${gameState.megaPrestigeMultiplier.toFixed(1)})</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">🌈 Гипер-престиж</div></div><div>${gameState.hyperPrestigeLevel} (x${gameState.hyperPrestigeMultiplier.toFixed(1)})</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">✨ Очки престижа</div></div><div>${gameState.prestigePoints}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">🎖️ Всего очков</div></div><div>${gameState.totalPrestigePoints}</div></div>
+            `;
+        }
+    }
+
+    function depositPrompt(depositIndex) {
+        const dep = BANK_DEPOSITS[depositIndex];
+        const amount = prompt(`Сколько монет положить? (мин. ${formatNumber(dep.minAmount)})`, String(dep.minAmount));
+        if (amount) {
+            const num = parseInt(amount);
+            if (!isNaN(num) && num >= dep.minAmount && num <= gameState.coins) {
+                depositToBank(num, dep.duration, dep.interest, dep.label);
+            } else {
+                alert(`Введите сумму от ${formatNumber(dep.minAmount)} до ${formatNumber(gameState.coins)}`);
+            }
+        }
+    }
+
+    // Инициализация
+    function init() {
+        loadGame();
+        updateUI();
+        
+        document.querySelectorAll(".tab-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                renderTab(btn.dataset.tab);
+            });
+        });
+        document.querySelector(".tab-btn").classList.add("active");
+        
+        document.getElementById("coinBtn").addEventListener("click", clickCoin);
+        
+        setInterval(() => {
+            checkBankMaturity();
+            updateUI();
+        }, 1000);
+        
+        setInterval(() => {
+            checkEvent();
+            updateUI();
+        }, 500);
+        
+        setInterval(() => checkQuests(), 500);
+        
+        lastTick = Date.now();
+        requestAnimationFrame(passiveIncome);
+    }
+    
+    init();
+</script>
 </body>
 </html>
