@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>МонетоКликер — Полная версия</title>
+    <title>МонетоКликер — Лидеры и Престижи</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         body { background: linear-gradient(135deg, #0a0500 0%, #1a0800 100%); color: #fff; font-family: 'Segoe UI', sans-serif; padding: 16px; min-height: 100vh; }
@@ -13,6 +14,7 @@
         .stat { background: rgba(120,53,15,0.4); border-radius: 10px; padding: 8px; }
         .stat-label { color: #92400e; font-size: 10px; }
         .stat-value { color: #fde68a; font-weight: 700; font-size: 13px; }
+        .total-multiplier { background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(124,58,237,0.2)); border-radius: 10px; padding: 8px; margin-top: 8px; }
         .coin-btn { width: 180px; height: 180px; margin: 20px auto; background: radial-gradient(circle at 35% 35%, #fbbf24aa, #f59e0b33); border: 3px solid #fbbf2488; border-radius: 50%; font-size: 70px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s; box-shadow: 0 0 40px rgba(251,191,36,0.3); }
         .coin-btn:active { transform: scale(0.93); }
         .tabs { display: flex; gap: 4px; background: rgba(120,53,15,0.2); border-radius: 14px; padding: 4px; overflow-x: auto; margin-bottom: 12px; }
@@ -35,9 +37,19 @@
         h2 { color: #fbbf24; font-size: 16px; margin-bottom: 12px; }
         .bank-deposit { background: rgba(6,78,59,0.3); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 12px; margin-bottom: 8px; }
         .event-banner { position: fixed; top: 0; left: 0; right: 0; background: #f59e0b; color: #000; padding: 8px; text-align: center; font-weight: bold; z-index: 100; animation: slideDown 0.3s ease; }
+        .save-status { font-size: 10px; color: #6ee7b7; margin-top: 4px; }
+        .leaderboard-entry { display: flex; align-items: center; gap: 12px; background: rgba(120,53,15,0.2); border-radius: 12px; padding: 10px; margin-bottom: 6px; }
+        .leaderboard-rank { font-size: 20px; min-width: 40px; text-align: center; }
+        .leaderboard-name { flex: 1; font-weight: bold; }
+        .leaderboard-value { color: #fbbf24; font-weight: bold; }
+        .name-input-modal { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; }
+        .name-input-card { background: #1a0800; border: 1px solid #fbbf24; border-radius: 20px; padding: 24px; width: 300px; text-align: center; }
+        .name-input-card input { width: 100%; background: #0a0500; border: 1px solid #b45309; border-radius: 10px; padding: 10px; color: white; margin: 12px 0; }
+        .name-input-card button { background: #b45309; border: none; border-radius: 10px; padding: 10px; color: white; font-weight: bold; margin: 5px; cursor: pointer; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes coinPop { 0% { opacity: 1; transform: scale(1.4); } 100% { opacity: 0; transform: scale(0.7); } }
         .particle { position: fixed; pointer-events: none; color: #fbbf24; font-weight: bold; font-size: 20px; z-index: 1000; animation: coinPop 0.5s ease-out forwards; }
+        .nickname-btn { background: rgba(251,191,36,0.2); border: 1px solid rgba(251,191,36,0.3); border-radius: 20px; padding: 4px 12px; font-size: 11px; cursor: pointer; display: inline-block; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -49,8 +61,11 @@
             <div class="stat"><div class="stat-label">👆 За клик</div><div class="stat-value" id="cpc">1</div></div>
             <div class="stat"><div class="stat-label">⚡ В секунду</div><div class="stat-value" id="cps">0</div></div>
         </div>
+        <div class="total-multiplier" id="totalMultiplier">📊 Общий множитель: x1</div>
         <div id="bankBalance" style="margin-top: 8px; font-size: 12px; color: #6ee7b7;"></div>
         <div id="prestigePoints" style="margin-top: 4px; font-size: 10px; color: #a78bfa;"></div>
+        <div id="saveStatus" class="save-status">☁️ Сохранение в облаке...</div>
+        <div class="nickname-btn" id="nicknameBtn">👤 Установить ник</div>
     </div>
 
     <div class="coin-btn" id="coinBtn">💰</div>
@@ -63,6 +78,7 @@
         <button class="tab-btn" data-tab="quests">📜 Квесты</button>
         <button class="tab-btn" data-tab="bank">🏦 Банк</button>
         <button class="tab-btn" data-tab="events">🎉 События</button>
+        <button class="tab-btn" data-tab="leaderboard">🥇 Лидеры</button>
         <button class="tab-btn" data-tab="stats">📊 Статы</button>
     </div>
 
@@ -70,7 +86,14 @@
 </div>
 
 <script>
-    // ---------- ПОЛНЫЕ ДАННЫЕ ----------
+    // Telegram Web App
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+        tg.expand();
+        tg.ready();
+    }
+
+    // ---------- ДАННЫЕ ----------
     const UPGRADES = [
         { id: "sharp_nail", name: "Острый ноготь", icon: "👆", baseCost: 10, maxLevel: 50, cpc: 1, mult: 1.5 },
         { id: "golden_finger", name: "Золотой палец", icon: "✨", baseCost: 100, maxLevel: 30, cpc: 5, mult: 1.6 },
@@ -138,9 +161,13 @@
         { label: "6 часов", duration: 360, interest: 1500, minAmount: 50000 }
     ];
 
-    const PRESTIGE_REQ = 1000000;
-    const MEGA_PRESTIGE_REQ = 10;
-    const HYPER_PRESTIGE_REQ = 3;
+    // Новые требования для престижей
+    const PRESTIGE_REQ = 1000000;      // 1 млн для обычного престижа
+    const MEGA_PRESTIGE_REQ = 1000000000;  // 1 млрд для мега-престижа
+    const HYPER_PRESTIGE_REQ = 1000000000000;  // 1 трлн для гипер-престижа
+
+    const CLOUD_SAVE_KEY = "coinclicker_cloud_save";
+    const LEADERBOARD_KEY = "coinclicker_leaderboard";
 
     // ---------- СОСТОЯНИЕ ----------
     let gameState = {
@@ -155,6 +182,7 @@
         hyperPrestigeMultiplier: 1,
         prestigePoints: 0,
         totalPrestigePoints: 0,
+        nickname: "",
         upgrades: UPGRADES.map(u => ({ id: u.id, level: 0 })),
         buildings: BUILDINGS.map(b => ({ id: b.id, count: 0 })),
         relics: RELICS.map(r => ({ id: r.id, owned: false })),
@@ -168,35 +196,207 @@
         eventCpsMult: 1
     };
 
-    // Загрузка/сохранение
-    function loadGame() {
-        const saved = localStorage.getItem("coinclicker_full_save");
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                gameState = { ...gameState, ...data };
-                gameState.upgrades = UPGRADES.map(u => {
-                    const found = data.upgrades?.find(x => x.id === u.id);
-                    return found || { id: u.id, level: 0 };
-                });
-                gameState.buildings = BUILDINGS.map(b => {
-                    const found = data.buildings?.find(x => x.id === b.id);
-                    return found || { id: b.id, count: 0 };
-                });
-                gameState.relics = RELICS.map(r => {
-                    const found = data.relics?.find(x => x.id === r.id);
-                    return found || { id: r.id, owned: false };
-                });
-                gameState.quests = QUESTS.map(q => {
-                    const found = data.quests?.find(x => x.id === q.id);
-                    return found || { id: q.id, completed: false, claimed: false };
-                });
-            } catch(e) {}
+    let leaderboard = [];
+    let saveTimeout = null;
+    let isCloudSaveReady = false;
+    let showNameModal = false;
+
+    // Загрузка/сохранение лидеров
+    function loadLeaderboard() {
+        try {
+            const saved = localStorage.getItem(LEADERBOARD_KEY);
+            if (saved) leaderboard = JSON.parse(saved);
+        } catch(e) {}
+        if (!leaderboard.length) leaderboard = [];
+    }
+
+    function saveLeaderboard() {
+        if (!gameState.nickname) return;
+        
+        // Обновляем запись игрока
+        const existingIndex = leaderboard.findIndex(entry => entry.name === gameState.nickname);
+        const entry = {
+            name: gameState.nickname,
+            coins: gameState.coins,
+            totalCoins: gameState.totalCoins,
+            prestigeLevel: gameState.prestigeLevel,
+            megaPrestigeLevel: gameState.megaPrestigeLevel,
+            hyperPrestigeLevel: gameState.hyperPrestigeLevel,
+            totalMultiplier: gameState.prestigeMultiplier * gameState.megaPrestigeMultiplier * gameState.hyperPrestigeMultiplier,
+            lastUpdate: Date.now()
+        };
+        
+        if (existingIndex >= 0) {
+            leaderboard[existingIndex] = entry;
+        } else {
+            leaderboard.push(entry);
+        }
+        
+        // Сортируем по общему множителю (престижам)
+        leaderboard.sort((a, b) => {
+            if (b.hyperPrestigeLevel !== a.hyperPrestigeLevel) return b.hyperPrestigeLevel - a.hyperPrestigeLevel;
+            if (b.megaPrestigeLevel !== a.megaPrestigeLevel) return b.megaPrestigeLevel - a.megaPrestigeLevel;
+            if (b.prestigeLevel !== a.prestigeLevel) return b.prestigeLevel - a.prestigeLevel;
+            return b.totalCoins - a.totalCoins;
+        });
+        
+        localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard.slice(0, 100)));
+    }
+
+    // Установка ника
+    function setNickname(name) {
+        gameState.nickname = name.trim().substring(0, 20);
+        saveLeaderboard();
+        autoSaveToCloud();
+        updateUI();
+        if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+    }
+
+    // Обновление статуса сохранения
+    function updateSaveStatus(text, isError = false) {
+        const statusEl = document.getElementById("saveStatus");
+        if (statusEl) {
+            statusEl.innerHTML = text;
+            statusEl.style.color = isError ? "#ef4444" : "#6ee7b7";
+            setTimeout(() => {
+                if (document.getElementById("saveStatus")?.innerHTML === text) {
+                    document.getElementById("saveStatus").innerHTML = "☁️ Сохранено в облаке";
+                    document.getElementById("saveStatus").style.color = "#6ee7b7";
+                }
+            }, 3000);
         }
     }
 
-    function saveGame() {
-        localStorage.setItem("coinclicker_full_save", JSON.stringify(gameState));
+    // Сохранение в облако Telegram
+    function saveToCloud() {
+        if (!tg || !isCloudSaveReady) return;
+        
+        const saveData = {
+            coins: gameState.coins,
+            totalCoins: gameState.totalCoins,
+            totalClicks: gameState.totalClicks,
+            prestigeLevel: gameState.prestigeLevel,
+            megaPrestigeLevel: gameState.megaPrestigeLevel,
+            hyperPrestigeLevel: gameState.hyperPrestigeLevel,
+            prestigeMultiplier: gameState.prestigeMultiplier,
+            megaPrestigeMultiplier: gameState.megaPrestigeMultiplier,
+            hyperPrestigeMultiplier: gameState.hyperPrestigeMultiplier,
+            prestigePoints: gameState.prestigePoints,
+            totalPrestigePoints: gameState.totalPrestigePoints,
+            nickname: gameState.nickname,
+            upgrades: gameState.upgrades,
+            buildings: gameState.buildings,
+            relics: gameState.relics,
+            quests: gameState.quests,
+            bankBalance: gameState.bankBalance,
+            bankDeposits: gameState.bankDeposits
+        };
+        
+        tg.CloudStorage.setItem(CLOUD_SAVE_KEY, JSON.stringify(saveData), (err) => {
+            if (err) {
+                console.error("Cloud save error:", err);
+                updateSaveStatus("⚠️ Ошибка облачного сохранения", true);
+            } else {
+                updateSaveStatus("☁️ Сохранено в облаке");
+            }
+        });
+    }
+
+    // Загрузка из облака Telegram
+    function loadFromCloud() {
+        if (!tg) {
+            updateSaveStatus("💾 Локальное сохранение");
+            return false;
+        }
+        
+        updateSaveStatus("☁️ Загрузка из облака...");
+        
+        tg.CloudStorage.getItem(CLOUD_SAVE_KEY, (err, data) => {
+            if (err || !data) {
+                updateSaveStatus("💾 Локальное сохранение");
+                isCloudSaveReady = true;
+                return;
+            }
+            
+            try {
+                const cloudData = JSON.parse(data);
+                gameState.coins = cloudData.coins || 0;
+                gameState.totalCoins = cloudData.totalCoins || 0;
+                gameState.totalClicks = cloudData.totalClicks || 0;
+                gameState.prestigeLevel = cloudData.prestigeLevel || 0;
+                gameState.megaPrestigeLevel = cloudData.megaPrestigeLevel || 0;
+                gameState.hyperPrestigeLevel = cloudData.hyperPrestigeLevel || 0;
+                gameState.prestigeMultiplier = cloudData.prestigeMultiplier || 1;
+                gameState.megaPrestigeMultiplier = cloudData.megaPrestigeMultiplier || 1;
+                gameState.hyperPrestigeMultiplier = cloudData.hyperPrestigeMultiplier || 1;
+                gameState.prestigePoints = cloudData.prestigePoints || 0;
+                gameState.totalPrestigePoints = cloudData.totalPrestigePoints || 0;
+                gameState.nickname = cloudData.nickname || "";
+                gameState.bankBalance = cloudData.bankBalance || 0;
+                gameState.bankDeposits = cloudData.bankDeposits || [];
+                
+                if (cloudData.upgrades) {
+                    gameState.upgrades = UPGRADES.map(u => {
+                        const found = cloudData.upgrades?.find(x => x.id === u.id);
+                        return found || { id: u.id, level: 0 };
+                    });
+                }
+                if (cloudData.buildings) {
+                    gameState.buildings = BUILDINGS.map(b => {
+                        const found = cloudData.buildings?.find(x => x.id === b.id);
+                        return found || { id: b.id, count: 0 };
+                    });
+                }
+                if (cloudData.relics) {
+                    gameState.relics = RELICS.map(r => {
+                        const found = cloudData.relics?.find(x => x.id === r.id);
+                        return found || { id: r.id, owned: false };
+                    });
+                }
+                if (cloudData.quests) {
+                    gameState.quests = QUESTS.map(q => {
+                        const found = cloudData.quests?.find(x => x.id === q.id);
+                        return found || { id: q.id, completed: false, claimed: false };
+                    });
+                }
+                
+                updateSaveStatus("☁️ Загружено из облака!");
+                isCloudSaveReady = true;
+                saveLeaderboard();
+                updateUI();
+                checkQuests();
+            } catch(e) {
+                console.error("Cloud load error:", e);
+                updateSaveStatus("⚠️ Ошибка загрузки", true);
+                isCloudSaveReady = true;
+            }
+        });
+        return true;
+    }
+
+    function autoSaveToCloud() {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            saveToCloud();
+            saveLeaderboard();
+            localStorage.setItem("coinclicker_backup", JSON.stringify({
+                coins: gameState.coins,
+                totalCoins: gameState.totalCoins,
+                totalClicks: gameState.totalClicks,
+                prestigeLevel: gameState.prestigeLevel,
+                megaPrestigeLevel: gameState.megaPrestigeLevel,
+                hyperPrestigeLevel: gameState.hyperPrestigeLevel,
+                prestigePoints: gameState.prestigePoints,
+                totalPrestigePoints: gameState.totalPrestigePoints,
+                nickname: gameState.nickname,
+                upgrades: gameState.upgrades,
+                buildings: gameState.buildings,
+                relics: gameState.relics,
+                quests: gameState.quests,
+                bankBalance: gameState.bankBalance,
+                bankDeposits: gameState.bankDeposits
+            }));
+        }, 1000);
     }
 
     // Расчёты
@@ -242,6 +442,10 @@
         return Math.floor((fromUps + fromBlds) * mult);
     }
 
+    function getTotalMultiplier() {
+        return gameState.prestigeMultiplier * gameState.megaPrestigeMultiplier * gameState.hyperPrestigeMultiplier;
+    }
+
     function formatNumber(n) {
         if (typeof n !== 'number' || isNaN(n)) n = 0;
         if (n >= 1e18) return (n/1e18).toFixed(2) + "Кв";
@@ -280,7 +484,7 @@
         setTimeout(() => btn.style.transform = "scale(1)", 100);
         
         updateUI();
-        saveGame();
+        autoSaveToCloud();
         checkQuests();
     }
 
@@ -293,7 +497,7 @@
         gameState.coins -= cost;
         saved.level++;
         updateUI();
-        saveGame();
+        autoSaveToCloud();
     }
 
     function buyBuilding(id) {
@@ -305,7 +509,7 @@
         gameState.coins -= cost;
         saved.count++;
         updateUI();
-        saveGame();
+        autoSaveToCloud();
         checkQuests();
     }
 
@@ -317,53 +521,57 @@
         gameState.prestigePoints -= def.cost;
         saved.owned = true;
         updateUI();
-        saveGame();
+        autoSaveToCloud();
     }
 
+    // Новые функции престижей
     function doPrestige() {
-        if (gameState.totalCoins < PRESTIGE_REQ) return;
-        const pts = Math.floor(Math.log10(gameState.totalCoins / PRESTIGE_REQ) * 3 + 1);
+        if (gameState.coins < PRESTIGE_REQ) return;
+        const pts = Math.floor(Math.log10(gameState.coins / PRESTIGE_REQ) * 3 + 1);
         gameState.prestigeLevel++;
-        gameState.prestigeMultiplier = 1 + gameState.prestigeLevel * 0.5 + gameState.megaPrestigeLevel * 2 + gameState.hyperPrestigeLevel * 10;
+        gameState.prestigeMultiplier = 1 + gameState.prestigeLevel * 0.5;
         gameState.prestigePoints += pts;
         gameState.totalPrestigePoints += pts;
         gameState.coins = 0;
-        gameState.totalCoins = 0;
         gameState.upgrades.forEach(u => u.level = 0);
         gameState.buildings.forEach(b => b.count = 0);
         updateUI();
-        saveGame();
+        autoSaveToCloud();
         checkQuests();
     }
 
     function doMegaPrestige() {
-        if (gameState.prestigeLevel < MEGA_PRESTIGE_REQ) return;
+        if (gameState.coins < MEGA_PRESTIGE_REQ) return;
+        const pts = Math.floor(Math.log10(gameState.coins / MEGA_PRESTIGE_REQ) * 5 + 5);
         gameState.megaPrestigeLevel++;
-        gameState.megaPrestigeMultiplier = 1 + gameState.megaPrestigeLevel * 5 + gameState.hyperPrestigeLevel * 50;
+        gameState.megaPrestigeMultiplier = 1 + gameState.megaPrestigeLevel * 2;
+        gameState.prestigePoints += pts;
+        gameState.totalPrestigePoints += pts;
+        gameState.coins = 0;
         gameState.prestigeLevel = 0;
         gameState.prestigeMultiplier = 1;
-        gameState.coins = 0;
-        gameState.totalCoins = 0;
         gameState.upgrades.forEach(u => u.level = 0);
         gameState.buildings.forEach(b => b.count = 0);
         updateUI();
-        saveGame();
+        autoSaveToCloud();
     }
 
     function doHyperPrestige() {
-        if (gameState.megaPrestigeLevel < HYPER_PRESTIGE_REQ) return;
+        if (gameState.coins < HYPER_PRESTIGE_REQ) return;
+        const pts = Math.floor(Math.log10(gameState.coins / HYPER_PRESTIGE_REQ) * 10 + 20);
         gameState.hyperPrestigeLevel++;
-        gameState.hyperPrestigeMultiplier = 1 + gameState.hyperPrestigeLevel * 100;
+        gameState.hyperPrestigeMultiplier = 1 + gameState.hyperPrestigeLevel * 5;
+        gameState.prestigePoints += pts;
+        gameState.totalPrestigePoints += pts;
+        gameState.coins = 0;
         gameState.prestigeLevel = 0;
         gameState.megaPrestigeLevel = 0;
         gameState.prestigeMultiplier = 1;
         gameState.megaPrestigeMultiplier = 1;
-        gameState.coins = 0;
-        gameState.totalCoins = 0;
         gameState.upgrades.forEach(u => u.level = 0);
         gameState.buildings.forEach(b => b.count = 0);
         updateUI();
-        saveGame();
+        autoSaveToCloud();
     }
 
     function claimQuest(id) {
@@ -379,7 +587,7 @@
             gameState.totalPrestigePoints += def.reward;
         }
         updateUI();
-        saveGame();
+        autoSaveToCloud();
     }
 
     function checkQuests() {
@@ -394,7 +602,7 @@
         });
         if (changed) {
             updateUI();
-            saveGame();
+            autoSaveToCloud();
         }
     }
 
@@ -410,7 +618,7 @@
             duration: duration,
             label: label
         });
-        saveGame();
+        autoSaveToCloud();
         updateUI();
     }
 
@@ -419,7 +627,7 @@
         gameState.coins += gameState.bankBalance;
         gameState.totalCoins += gameState.bankBalance;
         gameState.bankBalance = 0;
-        saveGame();
+        autoSaveToCloud();
         updateUI();
     }
 
@@ -440,7 +648,7 @@
         if (changed) {
             gameState.bankBalance = newBalance;
             gameState.bankDeposits = remaining;
-            saveGame();
+            autoSaveToCloud();
             updateUI();
         }
     }
@@ -455,7 +663,7 @@
                 gameState.eventCpsMult = 1;
                 document.getElementById("eventBanner")?.remove();
                 updateUI();
-                saveGame();
+                autoSaveToCloud();
             }
         } else if (gameState.totalCoins > 1000 && Math.random() < 0.003) {
             const ev = EVENTS[Math.floor(Math.random() * EVENTS.length)];
@@ -472,7 +680,7 @@
             banner.innerHTML = `${ev.icon} ${ev.name} — ${ev.desc} <span id="eventTimer"></span>`;
             document.body.insertBefore(banner, document.body.firstChild);
             updateUI();
-            saveGame();
+            autoSaveToCloud();
         }
         
         if (gameState.activeEvent) {
@@ -497,7 +705,7 @@
                 gameState.coins += earned;
                 gameState.totalCoins += earned;
                 updateUI();
-                saveGame();
+                autoSaveToCloud();
             }
             lastTick = now;
         }
@@ -511,17 +719,47 @@
         document.getElementById("coins").innerText = formatNumber(gameState.coins);
         document.getElementById("cpc").innerText = formatNumber(calcCPC());
         document.getElementById("cps").innerText = formatNumber(calcCPS());
+        document.getElementById("totalMultiplier").innerHTML = `📊 Общий множитель: x${getTotalMultiplier().toFixed(2)} (⭐${gameState.prestigeLevel} × 🔥${gameState.megaPrestigeLevel} × 🌈${gameState.hyperPrestigeLevel})`;
         document.getElementById("prestigePoints").innerHTML = `✨ Очки престижа: ${gameState.prestigePoints} (всего: ${gameState.totalPrestigePoints})`;
         if (gameState.bankBalance > 0) {
             document.getElementById("bankBalance").innerHTML = `🏦 В банке: ${formatNumber(gameState.bankBalance)}`;
         } else {
             document.getElementById("bankBalance").innerHTML = "";
         }
+        if (gameState.nickname) {
+            document.getElementById("nicknameBtn").innerHTML = `👤 ${gameState.nickname} ✏️`;
+        } else {
+            document.getElementById("nicknameBtn").innerHTML = `👤 Установить ник`;
+        }
         renderTab(currentTab);
     }
 
+    function renderLeaderboard() {
+        loadLeaderboard();
+        let html = `<h2>🥇 Таблица лидеров</h2>`;
+        
+        if (!leaderboard.length) {
+            html += `<div style="color:#92400e; text-align:center; padding:20px">Пока никого нет. Будь первым!</div>`;
+        } else {
+            leaderboard.slice(0, 20).forEach((entry, i) => {
+                const medals = ["🥇", "🥈", "🥉"];
+                const rank = i < 3 ? medals[i] : `#${i+1}`;
+                const isMe = entry.name === gameState.nickname;
+                html += `
+                    <div class="leaderboard-entry" style="${isMe ? 'border:1px solid #fbbf24' : ''}">
+                        <div class="leaderboard-rank">${rank}</div>
+                        <div class="leaderboard-name">${entry.name}${isMe ? ' 👈' : ''}</div>
+                        <div class="leaderboard-value">⭐${entry.prestigeLevel} 🔥${entry.megaPrestigeLevel} 🌈${entry.hyperPrestigeLevel}</div>
+                    </div>
+                `;
+            });
+        }
+        
+        html += `<div style="margin-top:12px; font-size:11px; color:#92400e">🏆 Сортировка: гипер > мега > престиж > монеты</div>`;
+        return html;
+    }
+
     function renderTab(tab) {
-        currentTab = tab;
         const container = document.getElementById("tabContent");
         if (!container) return;
         
@@ -570,28 +808,28 @@
             });
         }
         else if (tab === "prestige") {
-            const progress = Math.min((gameState.totalCoins / PRESTIGE_REQ) * 100, 100);
-            const megaProgress = Math.min((gameState.prestigeLevel / MEGA_PRESTIGE_REQ) * 100, 100);
-            const hyperProgress = Math.min((gameState.megaPrestigeLevel / HYPER_PRESTIGE_REQ) * 100, 100);
+            const prestigeProgress = Math.min((gameState.coins / PRESTIGE_REQ) * 100, 100);
+            const megaProgress = Math.min((gameState.coins / MEGA_PRESTIGE_REQ) * 100, 100);
+            const hyperProgress = Math.min((gameState.coins / HYPER_PRESTIGE_REQ) * 100, 100);
             container.innerHTML = `
                 <h2>🌟 Система перерождений</h2>
                 <div class="prestige-card">
                     <div style="display:flex; justify-content:space-between"><span>⭐ Престиж: ${gameState.prestigeLevel}</span><span>✨ Множитель: x${gameState.prestigeMultiplier.toFixed(1)}</span></div>
-                    <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
-                    <div style="font-size:11px">${formatNumber(gameState.totalCoins)} / ${formatNumber(PRESTIGE_REQ)}</div>
-                    <button class="buy-btn" onclick="doPrestige()" ${gameState.totalCoins < PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">✨ Переродиться</button>
+                    <div class="progress-bar"><div class="progress-fill" style="width:${prestigeProgress}%"></div></div>
+                    <div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(PRESTIGE_REQ)}</div>
+                    <button class="buy-btn" onclick="doPrestige()" ${gameState.coins < PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">✨ Обычный престиж</button>
                 </div>
                 <div class="prestige-card">
                     <div style="display:flex; justify-content:space-between"><span>🔥 Мега-престиж: ${gameState.megaPrestigeLevel}</span><span>Множитель: x${gameState.megaPrestigeMultiplier.toFixed(1)}</span></div>
                     <div class="progress-bar"><div class="progress-fill" style="width:${megaProgress}%"></div></div>
-                    <div style="font-size:11px">${gameState.prestigeLevel} / ${MEGA_PRESTIGE_REQ} престижей</div>
-                    <button class="buy-btn" onclick="doMegaPrestige()" ${gameState.prestigeLevel < MEGA_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🔥 Мега-перерождение</button>
+                    <div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(MEGA_PRESTIGE_REQ)} (1 млрд)</div>
+                    <button class="buy-btn" onclick="doMegaPrestige()" ${gameState.coins < MEGA_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🔥 Мега-престиж</button>
                 </div>
                 <div class="prestige-card">
                     <div style="display:flex; justify-content:space-between"><span>🌈 Гипер-престиж: ${gameState.hyperPrestigeLevel}</span><span>Множитель: x${gameState.hyperPrestigeMultiplier.toFixed(1)}</span></div>
                     <div class="progress-bar"><div class="progress-fill" style="width:${hyperProgress}%"></div></div>
-                    <div style="font-size:11px">${gameState.megaPrestigeLevel} / ${HYPER_PRESTIGE_REQ} мега-престижей</div>
-                    <button class="buy-btn" onclick="doHyperPrestige()" ${gameState.megaPrestigeLevel < HYPER_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🌈 Гипер-перерождение</button>
+                    <div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(HYPER_PRESTIGE_REQ)} (1 трлн)</div>
+                    <button class="buy-btn" onclick="doHyperPrestige()" ${gameState.coins < HYPER_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🌈 Гипер-престиж</button>
                 </div>
             `;
         }
@@ -702,6 +940,9 @@
                 `;
             });
         }
+        else if (tab === "leaderboard") {
+            container.innerHTML = renderLeaderboard();
+        }
         else if (tab === "stats") {
             const cpc = calcCPC();
             const cps = calcCPS();
@@ -715,6 +956,7 @@
                 <div class="item"><div class="item-info"><div class="item-name">⭐ Престиж</div></div><div>${gameState.prestigeLevel} (x${gameState.prestigeMultiplier.toFixed(1)})</div></div>
                 <div class="item"><div class="item-info"><div class="item-name">🔥 Мега-престиж</div></div><div>${gameState.megaPrestigeLevel} (x${gameState.megaPrestigeMultiplier.toFixed(1)})</div></div>
                 <div class="item"><div class="item-info"><div class="item-name">🌈 Гипер-престиж</div></div><div>${gameState.hyperPrestigeLevel} (x${gameState.hyperPrestigeMultiplier.toFixed(1)})</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">📊 Общий множитель</div></div><div>x${getTotalMultiplier().toFixed(2)}</div></div>
                 <div class="item"><div class="item-info"><div class="item-name">✨ Очки престижа</div></div><div>${gameState.prestigePoints}</div></div>
                 <div class="item"><div class="item-info"><div class="item-name">🎖️ Всего очков</div></div><div>${gameState.totalPrestigePoints}</div></div>
             `;
@@ -734,9 +976,82 @@
         }
     }
 
+    function showNicknameModal() {
+        const modal = document.createElement('div');
+        modal.className = 'name-input-modal';
+        modal.innerHTML = `
+            <div class="name-input-card">
+                <h3 style="color:#fbbf24">👤 Введите ник</h3>
+                <input type="text" id="nicknameInput" maxlength="20" placeholder="Твой ник..." value="${gameState.nickname}">
+                <div>
+                    <button id="saveNicknameBtn">Сохранить</button>
+                    <button id="cancelNicknameBtn">Отмена</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        document.getElementById('saveNicknameBtn').onclick = () => {
+            const input = document.getElementById('nicknameInput');
+            if (input.value.trim()) {
+                setNickname(input.value);
+            }
+            modal.remove();
+        };
+        document.getElementById('cancelNicknameBtn').onclick = () => modal.remove();
+    }
+
     // Инициализация
     function init() {
-        loadGame();
+        loadLeaderboard();
+        if (tg) {
+            loadFromCloud();
+        } else {
+            const saved = localStorage.getItem("coinclicker_backup");
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    gameState.coins = data.coins || 0;
+                    gameState.totalCoins = data.totalCoins || 0;
+                    gameState.totalClicks = data.totalClicks || 0;
+                    gameState.prestigeLevel = data.prestigeLevel || 0;
+                    gameState.megaPrestigeLevel = data.megaPrestigeLevel || 0;
+                    gameState.hyperPrestigeLevel = data.hyperPrestigeLevel || 0;
+                    gameState.prestigePoints = data.prestigePoints || 0;
+                    gameState.totalPrestigePoints = data.totalPrestigePoints || 0;
+                    gameState.nickname = data.nickname || "";
+                    gameState.bankBalance = data.bankBalance || 0;
+                    gameState.bankDeposits = data.bankDeposits || [];
+                    if (data.upgrades) {
+                        gameState.upgrades = UPGRADES.map(u => {
+                            const found = data.upgrades?.find(x => x.id === u.id);
+                            return found || { id: u.id, level: 0 };
+                        });
+                    }
+                    if (data.buildings) {
+                        gameState.buildings = BUILDINGS.map(b => {
+                            const found = data.buildings?.find(x => x.id === b.id);
+                            return found || { id: b.id, count: 0 };
+                        });
+                    }
+                    if (data.relics) {
+                        gameState.relics = RELICS.map(r => {
+                            const found = data.relics?.find(x => x.id === r.id);
+                            return found || { id: r.id, owned: false };
+                        });
+                    }
+                    if (data.quests) {
+                        gameState.quests = QUESTS.map(q => {
+                            const found = data.quests?.find(x => x.id === q.id);
+                            return found || { id: q.id, completed: false, claimed: false };
+                        });
+                    }
+                    updateSaveStatus("💾 Загружено из локального сохранения");
+                } catch(e) {}
+            }
+            isCloudSaveReady = true;
+        }
+        
         updateUI();
         
         document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -749,6 +1064,7 @@
         document.querySelector(".tab-btn").classList.add("active");
         
         document.getElementById("coinBtn").addEventListener("click", clickCoin);
+        document.getElementById("nicknameBtn").addEventListener("click", showNicknameModal);
         
         setInterval(() => {
             checkBankMaturity();
