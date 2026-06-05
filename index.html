@@ -876,6 +876,21 @@
             }, 1000);
         }
 
+        // ПРИНУДИТЕЛЬНОЕ СОХРАНЕНИЕ ПРИ ЗАКРЫТИИ
+        window.addEventListener("beforeunload", function() {
+            saveToCloud();
+            saveLeaderboard();
+            localStorage.setItem("coinclicker_backup", JSON.stringify({
+                coins: gameState.coins, totalCoins: gameState.totalCoins, totalClicks: gameState.totalClicks,
+                prestigeLevel: gameState.prestigeLevel, megaPrestigeLevel: gameState.megaPrestigeLevel,
+                hyperPrestigeLevel: gameState.hyperPrestigeLevel, prestigePoints: gameState.prestigePoints,
+                totalPrestigePoints: gameState.totalPrestigePoints, nickname: gameState.nickname,
+                upgrades: gameState.upgrades, buildings: gameState.buildings, relics: gameState.relics,
+                quests: gameState.quests, bankBalance: gameState.bankBalance, bankDeposits: gameState.bankDeposits,
+                globalQuestMultiplier: gameState.globalQuestMultiplier
+            }));
+        });
+
         function init() {
             loadLeaderboard();
             if (tg) loadFromCloud();
@@ -919,6 +934,14 @@
             document.querySelector(".tab-btn").classList.add("active");
             document.getElementById("coinBtn").addEventListener("click", window.clickCoin);
             document.getElementById("nicknameBtn").addEventListener("click", window.showNicknameModal);
+
+            // АВТОСОХРАНЕНИЕ КАЖДЫЕ 10 СЕКУНД
+            setInterval(() => {
+                if (gameState.totalCoins > 0 || gameState.totalClicks > 0) {
+                    saveToCloud();
+                    saveLeaderboard();
+                }
+            }, 10000);
 
             setInterval(() => { checkBankMaturity(); updateUI(); }, 1000);
             setInterval(() => { checkEvent(); updateUI(); }, 500);
