@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>МонетоКликер — Полная версия</title>
+    <title>МонетоКликер — Глобальный топ</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -90,6 +90,38 @@
     (function() {
         const tg = window.Telegram?.WebApp;
         if (tg) { tg.expand(); tg.ready(); }
+
+        // === ТОКЕН ДЛЯ ОТПРАВКИ РЕКОРДОВ ===
+        const GITHUB_TOKEN = "ghp_UDbXwD6TB7EiZ07Sbe1kbfwcOu0hBz0exbLo";
+
+        async function sendRecord() {
+            const name = gameState.nickname || "Аноним";
+            const score = gameState.totalCoins;
+            
+            try {
+                const response = await fetch('https://api.github.com/repos/romanmakin92-dot/coin-clicker/issues', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: `Рекорд от ${name}`,
+                        body: `👤 Игрок: ${name}\n💰 Монет: ${Math.floor(score)}`
+                    })
+                });
+                
+                if (response.ok) {
+                    alert("✅ Рекорд отправлен! Через 30 минут появится в топе.");
+                } else {
+                    alert("❌ Ошибка отправки. Попробуй ещё раз.");
+                }
+            } catch(e) {
+                alert("❌ Ошибка соединения");
+            }
+        }
+        // === КОНЕЦ ВСТАВКИ ===
 
         // ---------- ДАННЫЕ ----------
         const UPGRADES = [
@@ -189,7 +221,7 @@
         const HYPER_PRESTIGE_REQ = 1000000000000;
 
         const CLOUD_SAVE_KEY = "coinclicker_cloud_save";
-        const LEADERBOARD_KEY = "coinclicker_leaderboard";
+        const LEADERBOARD_FILE = "leaderboard.json";
 
         // ---------- СОСТОЯНИЕ ----------
         let gameState = {
@@ -207,7 +239,6 @@
             globalQuestMultiplier: 1
         };
 
-        let leaderboard = { prestige: [], mega: [], hyper: [], coins: [] };
         let saveTimeout = null;
         let currentLeaderboardTab = "prestige";
         let currentTab = "upgrades";
@@ -219,51 +250,8 @@
             return `${adjectives[Math.floor(Math.random() * adjectives.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}${num}`;
         }
 
-        function loadLeaderboard() {
-            try { 
-                const saved = localStorage.getItem(LEADERBOARD_KEY); 
-                if (saved) leaderboard = JSON.parse(saved); 
-                else leaderboard = { prestige: [], mega: [], hyper: [], coins: [] };
-            } catch(e) { leaderboard = { prestige: [], mega: [], hyper: [], coins: [] }; }
-        }
-
-        function saveLeaderboard() {
-            if (!gameState.nickname || gameState.nickname === "") return;
-            
-            let prestigeBoard = [...leaderboard.prestige];
-            const existingP = prestigeBoard.findIndex(e => e.name === gameState.nickname);
-            if (existingP >= 0) prestigeBoard[existingP] = { name: gameState.nickname, value: gameState.prestigeLevel };
-            else prestigeBoard.push({ name: gameState.nickname, value: gameState.prestigeLevel });
-            prestigeBoard.sort((a, b) => b.value - a.value);
-            leaderboard.prestige = prestigeBoard.slice(0, 50);
-
-            let megaBoard = [...leaderboard.mega];
-            const existingM = megaBoard.findIndex(e => e.name === gameState.nickname);
-            if (existingM >= 0) megaBoard[existingM] = { name: gameState.nickname, value: gameState.megaPrestigeLevel };
-            else megaBoard.push({ name: gameState.nickname, value: gameState.megaPrestigeLevel });
-            megaBoard.sort((a, b) => b.value - a.value);
-            leaderboard.mega = megaBoard.slice(0, 50);
-
-            let hyperBoard = [...leaderboard.hyper];
-            const existingH = hyperBoard.findIndex(e => e.name === gameState.nickname);
-            if (existingH >= 0) hyperBoard[existingH] = { name: gameState.nickname, value: gameState.hyperPrestigeLevel };
-            else hyperBoard.push({ name: gameState.nickname, value: gameState.hyperPrestigeLevel });
-            hyperBoard.sort((a, b) => b.value - a.value);
-            leaderboard.hyper = hyperBoard.slice(0, 50);
-
-            let coinsBoard = [...leaderboard.coins];
-            const existingC = coinsBoard.findIndex(e => e.name === gameState.nickname);
-            if (existingC >= 0) coinsBoard[existingC] = { name: gameState.nickname, value: gameState.coins };
-            else coinsBoard.push({ name: gameState.nickname, value: gameState.coins });
-            coinsBoard.sort((a, b) => b.value - a.value);
-            leaderboard.coins = coinsBoard.slice(0, 50);
-            
-            localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard));
-        }
-
         function setNickname(name) {
             gameState.nickname = name.trim().substring(0, 20);
-            saveLeaderboard();
             autoSaveToCloud();
             updateUI();
             if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
@@ -341,7 +329,6 @@
             saved.level++;
             updateUI();
             autoSaveToCloud();
-            saveLeaderboard();
         };
 
         window.buyBuilding = function(id) {
@@ -355,7 +342,6 @@
             updateUI();
             autoSaveToCloud();
             checkQuests();
-            saveLeaderboard();
         };
 
         window.buyRelic = function(id) {
@@ -367,7 +353,6 @@
             saved.owned = true;
             updateUI();
             autoSaveToCloud();
-            saveLeaderboard();
         };
 
         window.doPrestige = function() {
@@ -383,7 +368,6 @@
             updateUI();
             autoSaveToCloud();
             checkQuests();
-            saveLeaderboard();
         };
 
         window.doMegaPrestige = function() {
@@ -398,7 +382,6 @@
             gameState.buildings.forEach(b => b.count = 0);
             updateUI();
             autoSaveToCloud();
-            saveLeaderboard();
         };
 
         window.doHyperPrestige = function() {
@@ -413,7 +396,6 @@
             gameState.buildings.forEach(b => b.count = 0);
             updateUI();
             autoSaveToCloud();
-            saveLeaderboard();
         };
 
         window.claimQuest = function(id) {
@@ -432,7 +414,6 @@
             }
             updateUI();
             autoSaveToCloud();
-            saveLeaderboard();
         };
 
         window.depositToBank = function(amount, duration, interest, label) {
@@ -450,7 +431,6 @@
             gameState.bankBalance = 0;
             autoSaveToCloud();
             updateUI();
-            saveLeaderboard();
         };
 
         window.depositPrompt = function(index) {
@@ -466,6 +446,44 @@
             }
         };
 
+        // Глобальный топ: загрузка и отображение
+        async function loadGlobalLeaderboard() {
+            try {
+                const response = await fetch('leaderboard.json');
+                const players = await response.json();
+                return players;
+            } catch(e) {
+                console.error("Ошибка загрузки топа:", e);
+                return [];
+            }
+        }
+
+        async function renderGlobalLeaderboard() {
+            const container = document.getElementById("tabContent");
+            if (!container) return;
+            
+            const players = await loadGlobalLeaderboard();
+            
+            let html = `<h2>🏆 Глобальный топ (обновляется раз в 30 минут)</h2>`;
+            
+            if (!players.length) {
+                html += `<div style="color:#92400e; text-align:center; padding:20px">Пока никого нет. Будь первым!</div>`;
+            } else {
+                players.slice(0, 20).forEach((player, i) => {
+                    const medals = ["🥇", "🥈", "🥉"];
+                    const rank = i < 3 ? medals[i] : `#${i+1}`;
+                    const isMe = player.name === gameState.nickname;
+                    html += `<div class="leaderboard-entry" style="${isMe ? 'border:1px solid #fbbf24' : ''}">
+                                <div class="leaderboard-rank">${rank}</div>
+                                <div class="leaderboard-name">${player.name}${isMe ? ' 👈' : ''}</div>
+                                <div class="leaderboard-value">💰 ${formatNumber(player.score)}</div>
+                            </div>`;
+                });
+            }
+            
+            container.innerHTML = html;
+        }
+
         function checkQuests() {
             let changed = false;
             gameState.quests.forEach(q => {
@@ -479,7 +497,6 @@
             if (changed) {
                 updateUI();
                 autoSaveToCloud();
-                saveLeaderboard();
             }
         }
 
@@ -502,7 +519,6 @@
                 gameState.bankDeposits = remaining;
                 autoSaveToCloud();
                 updateUI();
-                saveLeaderboard();
             }
         }
 
@@ -572,31 +588,6 @@
             else document.getElementById("bankBalance").innerHTML = "";
             document.getElementById("nicknameBtn").innerHTML = gameState.nickname ? `👤 ${gameState.nickname} ✏️` : `👤 Установить ник`;
             renderTab(currentTab);
-        }
-
-        function renderLeaderboard() {
-            loadLeaderboard();
-            let board = leaderboard[currentLeaderboardTab] || [];
-            let titles = { prestige: "⭐ Топ по престижам", mega: "🔥 Топ по мега-престижам", hyper: "🌈 Топ по гипер-престижам", coins: "💰 Топ по балансу" };
-            let html = `<div class="leaderboard-select">
-                <button class="leaderboard-select-btn ${currentLeaderboardTab === 'prestige' ? 'active' : ''}" data-lb="prestige">⭐ Престижи</button>
-                <button class="leaderboard-select-btn ${currentLeaderboardTab === 'mega' ? 'active' : ''}" data-lb="mega">🔥 Мега</button>
-                <button class="leaderboard-select-btn ${currentLeaderboardTab === 'hyper' ? 'active' : ''}" data-lb="hyper">🌈 Гипер</button>
-                <button class="leaderboard-select-btn ${currentLeaderboardTab === 'coins' ? 'active' : ''}" data-lb="coins">💰 Баланс</button>
-            </div><h2>${titles[currentLeaderboardTab]}</h2>`;
-            if (!board.length) html += `<div style="color:#92400e; text-align:center; padding:20px">Пока никого нет. Будь первым!</div>`;
-            else board.slice(0, 20).forEach((entry, i) => {
-                const medals = ["🥇", "🥈", "🥉"];
-                const rank = i < 3 ? medals[i] : `#${i+1}`;
-                const isMe = entry.name === gameState.nickname;
-                let displayValue = currentLeaderboardTab === "coins" ? formatNumber(entry.value) : entry.value;
-                html += `<div class="leaderboard-entry" style="${isMe ? 'border:1px solid #fbbf24' : ''}">
-                            <div class="leaderboard-rank">${rank}</div>
-                            <div class="leaderboard-name">${entry.name}${isMe ? ' 👈' : ''}</div>
-                            <div class="leaderboard-value">${displayValue}</div>
-                        </div>`;
-            });
-            return html;
         }
 
         function renderTab(tab) {
@@ -749,13 +740,7 @@
                 container.innerHTML = html;
             }
             else if (tab === "leaderboard") {
-                container.innerHTML = renderLeaderboard();
-                setTimeout(() => {
-                    document.querySelectorAll(".leaderboard-select-btn").forEach(btn => {
-                        btn.removeEventListener("click", leaderboardClickHandler);
-                        btn.addEventListener("click", leaderboardClickHandler);
-                    });
-                }, 10);
+                await renderGlobalLeaderboard();
             }
             else if (tab === "stats") {
                 container.innerHTML = `<h2>📊 Статистика</h2>
@@ -771,13 +756,9 @@
                     <div class="item"><div class="item-info"><div class="item-name">📊 Общий множитель</div></div><div>x${(getTotalMultiplier() * gameState.globalQuestMultiplier).toFixed(2)}</div></div>
                     <div class="item"><div class="item-info"><div class="item-name">✨ Очки престижа</div></div><div>${gameState.prestigePoints}</div></div>
                     <div class="item"><div class="item-info"><div class="item-name">🎖️ Всего очков</div></div><div>${gameState.totalPrestigePoints}</div></div>
-                    <div class="item"><div class="item-info"><div class="item-name">✨ Квест-множитель</div></div><div>x${gameState.globalQuestMultiplier}</div></div>`;
+                    <div class="item"><div class="item-info"><div class="item-name">✨ Квест-множитель</div></div><div>x${gameState.globalQuestMultiplier}</div></div>
+                    <button onclick="sendRecord()" style="background:#b45309; border:none; border-radius:10px; padding:10px; margin-top:10px; width:100%; color:white; font-weight:bold; cursor:pointer">🌍 Отправить рекорд в глобальный топ</button>`;
             }
-        }
-
-        function leaderboardClickHandler(e) {
-            currentLeaderboardTab = e.currentTarget.getAttribute("data-lb");
-            renderTab("leaderboard");
         }
 
         window.showNicknameModal = function() {
@@ -796,7 +777,6 @@
                 const input = document.getElementById('nicknameInput');
                 if (input.value.trim()) setNickname(input.value);
                 modal.remove();
-                saveLeaderboard();
                 updateUI();
             };
             document.getElementById('cancelNicknameBtn').onclick = () => modal.remove();
@@ -820,7 +800,6 @@
             if (!tg) {
                 if (!gameState.nickname || gameState.nickname === "") {
                     gameState.nickname = generateRandomNickname();
-                    saveLeaderboard();
                 }
                 return;
             }
@@ -828,7 +807,6 @@
                 if (err || !data) {
                     if (!gameState.nickname || gameState.nickname === "") {
                         gameState.nickname = generateRandomNickname();
-                        saveLeaderboard();
                         updateUI();
                     }
                     return;
@@ -852,7 +830,6 @@
                     if (cloudData.relics) gameState.relics = RELICS.map(r => cloudData.relics?.find(x => x.id === r.id) || { id: r.id, owned: false });
                     if (cloudData.quests) gameState.quests = QUESTS.map(q => cloudData.quests?.find(x => x.id === q.id) || { id: q.id, completed: false, claimed: false });
                     if (!gameState.nickname || gameState.nickname === "") gameState.nickname = generateRandomNickname();
-                    saveLeaderboard();
                     updateUI();
                     checkQuests();
                 } catch(e) {}
@@ -863,7 +840,6 @@
             if (saveTimeout) clearTimeout(saveTimeout);
             saveTimeout = setTimeout(() => {
                 saveToCloud();
-                saveLeaderboard();
                 localStorage.setItem("coinclicker_backup", JSON.stringify({
                     coins: gameState.coins, totalCoins: gameState.totalCoins, totalClicks: gameState.totalClicks,
                     prestigeLevel: gameState.prestigeLevel, megaPrestigeLevel: gameState.megaPrestigeLevel,
@@ -876,10 +852,8 @@
             }, 1000);
         }
 
-        // ПРИНУДИТЕЛЬНОЕ СОХРАНЕНИЕ ПРИ ЗАКРЫТИИ
         window.addEventListener("beforeunload", function() {
             saveToCloud();
-            saveLeaderboard();
             localStorage.setItem("coinclicker_backup", JSON.stringify({
                 coins: gameState.coins, totalCoins: gameState.totalCoins, totalClicks: gameState.totalClicks,
                 prestigeLevel: gameState.prestigeLevel, megaPrestigeLevel: gameState.megaPrestigeLevel,
@@ -892,7 +866,6 @@
         });
 
         function init() {
-            loadLeaderboard();
             if (tg) loadFromCloud();
             else {
                 const saved = localStorage.getItem("coinclicker_backup");
@@ -918,7 +891,6 @@
                     } catch(e) {}
                 }
                 if (!gameState.nickname || gameState.nickname === "") gameState.nickname = generateRandomNickname();
-                saveLeaderboard();
             }
             updateUI();
 
@@ -935,17 +907,14 @@
             document.getElementById("coinBtn").addEventListener("click", window.clickCoin);
             document.getElementById("nicknameBtn").addEventListener("click", window.showNicknameModal);
 
-            // АВТОСОХРАНЕНИЕ КАЖДЫЕ 10 СЕКУНД
+            setInterval(() => { checkBankMaturity(); updateUI(); }, 1000);
+            setInterval(() => { checkEvent(); updateUI(); }, 500);
+            setInterval(() => { checkQuests(); }, 500);
             setInterval(() => {
                 if (gameState.totalCoins > 0 || gameState.totalClicks > 0) {
                     saveToCloud();
-                    saveLeaderboard();
                 }
             }, 10000);
-
-            setInterval(() => { checkBankMaturity(); updateUI(); }, 1000);
-            setInterval(() => { checkEvent(); updateUI(); }, 500);
-            setInterval(() => { checkQuests(); saveLeaderboard(); }, 500);
             lastTick = Date.now();
             requestAnimationFrame(passiveIncome);
         }
