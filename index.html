@@ -87,772 +87,761 @@
 </div>
 
 <script>
-    (function() {
-        const tg = window.Telegram?.WebApp;
-        if (tg) { tg.expand(); tg.ready(); }
+    // Telegram Web App
+    const tg = window.Telegram?.WebApp;
+    if (tg) { tg.expand(); tg.ready(); }
 
-        // === ТОКЕН ДЛЯ ОТПРАВКИ РЕКОРДОВ ===
-        const GITHUB_TOKEN = "ghp_UDbXwD6TB7EiZ07Sbe1kbfwcOu0hBz0exbLo";
+    // === ТОКЕН ДЛЯ ОТПРАВКИ РЕКОРДОВ ===
+    const GITHUB_TOKEN = "ghp_UDbXwD6TB7EiZ07Sbe1kbfwcOu0hBz0exbLo";
 
-        async function sendRecord() {
-            const name = gameState.nickname || "Аноним";
-            const score = gameState.totalCoins;
+    // ---------- ДАННЫЕ ----------
+    const UPGRADES = [
+        { id: "sharp_nail", name: "Острый ноготь", icon: "👆", baseCost: 10, maxLevel: 50, cpc: 1, mult: 1.5 },
+        { id: "golden_finger", name: "Золотой палец", icon: "✨", baseCost: 100, maxLevel: 30, cpc: 5, mult: 1.6 },
+        { id: "lucky_charm", name: "Талисман удачи", icon: "🍀", baseCost: 500, maxLevel: 20, cpc: 10, mult: 1.7 },
+        { id: "magic_glove", name: "Магическая перчатка", icon: "🧤", baseCost: 2000, maxLevel: 15, cpc: 25, mult: 1.8 },
+        { id: "dragon_claw", name: "Коготь дракона", icon: "🐉", baseCost: 10000, maxLevel: 10, cpc: 100, mult: 2.0 },
+        { id: "cosmic_fist", name: "Космический кулак", icon: "🌠", baseCost: 100000, maxLevel: 8, cpc: 500, mult: 2.2 },
+        { id: "god_hand", name: "Рука бога", icon: "⚡", baseCost: 2000000, maxLevel: 5, cpc: 5000, mult: 2.5 },
+        { id: "auto_clicker", name: "Авто-кликер", icon: "🤖", baseCost: 50, maxLevel: 40, cpc: 0, cps: 2, mult: 1.5 },
+        { id: "miner", name: "Шахтёр", icon: "⛏️", baseCost: 300, maxLevel: 25, cpc: 0, cps: 10, mult: 1.6 },
+        { id: "time_warp", name: "Искажение времени", icon: "⌛", baseCost: 2500, maxLevel: 15, cpc: 0, cps: 50, mult: 1.8 },
+        { id: "quantum_tap", name: "Квантовый удар", icon: "🔮", baseCost: 500000, maxLevel: 10, cpc: 0, cps: 1000, mult: 2.0 }
+    ];
+
+    const BUILDINGS = [
+        { id: "piggy_bank", name: "Копилка", icon: "🐷", baseCost: 150, cps: 5, mult: 1.15 },
+        { id: "market", name: "Рынок", icon: "🏪", baseCost: 800, cps: 20, mult: 1.15 },
+        { id: "factory", name: "Завод", icon: "🏭", baseCost: 5000, cps: 100, mult: 1.15 },
+        { id: "casino", name: "Казино", icon: "🎰", baseCost: 25000, cps: 500, mult: 1.15 },
+        { id: "bank_branch", name: "Банковский филиал", icon: "🏦", baseCost: 100000, cps: 2000, mult: 1.15 },
+        { id: "crypto_farm", name: "Крипто-ферма", icon: "💻", baseCost: 500000, cps: 10000, mult: 1.15 },
+        { id: "space_mine", name: "Космическая шахта", icon: "🚀", baseCost: 2000000, cps: 50000, mult: 1.15 },
+        { id: "time_machine", name: "Машина времени", icon: "⏰", baseCost: 10000000, cps: 200000, mult: 1.15 },
+        { id: "dark_matter", name: "Тёмная материя", icon: "🌑", baseCost: 100000000, cps: 2000000, mult: 1.15 },
+        { id: "multiverse", name: "Мультивселенная", icon: "🌌", baseCost: 1000000000, cps: 20000000, mult: 1.15 },
+        { id: "god_realm", name: "Царство богов", icon: "🏛️", baseCost: 50000000000, cps: 500000000, mult: 1.15 }
+    ];
+
+    const RELICS = [
+        { id: "golden_egg", name: "Золотое Яйцо", icon: "🥚", cost: 1, bonus: 0.5 },
+        { id: "ancient_coin", name: "Древняя Монета", icon: "🪙", cost: 3, bonus: 1.0 },
+        { id: "philosophers_stone", name: "Философский камень", icon: "💠", cost: 5, bonus: 1.5 },
+        { id: "infinity_gem", name: "Камень Бесконечности", icon: "💎", cost: 10, bonus: 2.0 },
+        { id: "time_crystal", name: "Кристалл Времени", icon: "🔷", cost: 20, bonus: 3.0 },
+        { id: "void_heart", name: "Сердце Пустоты", icon: "🖤", cost: 50, bonus: 5.0 },
+        { id: "cosmic_core", name: "Космическое Ядро", icon: "⭐", cost: 100, bonus: 10.0 },
+        { id: "wisdom_stone", name: "Камень Мудрости", icon: "📖", cost: 150, bonus: 2.0 },
+        { id: "warrior_heart", name: "Сердце Воина", icon: "⚔️", cost: 200, bonus: 3.0 },
+        { id: "dragon_soul", name: "Душа Дракона", icon: "🐲", cost: 300, bonus: 4.0 },
+        { id: "phoenix_feather", name: "Перо Феникса", icon: "🔥", cost: 500, bonus: 5.0 },
+        { id: "godly_essence", name: "Божественная Сущность", icon: "👑", cost: 1000, bonus: 10.0 },
+        { id: "eternity_fragment", name: "Осколок Вечности", icon: "⌛", cost: 2000, bonus: 15.0 },
+        { id: "creator_spark", name: "Искра Создателя", icon: "✨", cost: 5000, bonus: 20.0 }
+    ];
+
+    const QUESTS = [
+        { id: "q1", name: "Кликер", desc: "50 кликов", icon: "👆", condition: (s) => s.totalClicks >= 50, reward: 500, rewardType: "coins" },
+        { id: "q2", name: "Маньяк кликов", desc: "500 кликов", icon: "🖱️", condition: (s) => s.totalClicks >= 500, reward: 5000, rewardType: "coins" },
+        { id: "q3", name: "Кликер-бог", desc: "5000 кликов", icon: "⚡", condition: (s) => s.totalClicks >= 5000, reward: 50000, rewardType: "coins" },
+        { id: "q4", name: "Легенда кликов", desc: "50000 кликов", icon: "🏆", condition: (s) => s.totalClicks >= 50000, reward: 500000, rewardType: "coins" },
+        { id: "q5", name: "Миф кликов", desc: "500000 кликов", icon: "🌟", condition: (s) => s.totalClicks >= 500000, reward: 5000000, rewardType: "coins" },
+        { id: "q6", name: "Бог кликов", desc: "1000000 кликов", icon: "👑", condition: (s) => s.totalClicks >= 1000000, reward: 50000000, rewardType: "coins" },
+        { id: "q7", name: "Накопитель", desc: "1000 монет", icon: "💰", condition: (s) => s.totalCoins >= 1000, reward: 2000, rewardType: "coins" },
+        { id: "q8", name: "Торговец", desc: "100000 монет", icon: "💎", condition: (s) => s.totalCoins >= 100000, reward: 200000, rewardType: "coins" },
+        { id: "q9", name: "Капиталист", desc: "10 млн монет", icon: "🏦", condition: (s) => s.totalCoins >= 10000000, reward: 20000000, rewardType: "coins" },
+        { id: "q10", name: "Миллиардер", desc: "1 млрд монет", icon: "🤑", condition: (s) => s.totalCoins >= 1e9, reward: 200000000, rewardType: "coins" },
+        { id: "q11", name: "Триллионер", desc: "1 трлн монет", icon: "🌌", condition: (s) => s.totalCoins >= 1e12, reward: 2e12, rewardType: "coins" },
+        { id: "q12", name: "Квадриллионер", desc: "1 квадриллион монет", icon: "🌠", condition: (s) => s.totalCoins >= 1e15, reward: 2e15, rewardType: "coins" },
+        { id: "q13", name: "Квинтиллионер", desc: "1 квинтиллион монет", icon: "✨", condition: (s) => s.totalCoins >= 1e18, reward: 2e18, rewardType: "coins" },
+        { id: "q14", name: "Застройщик", desc: "5 зданий одного типа", icon: "🏗️", condition: (s) => s.buildings.some(b => b.count >= 5), reward: 10000, rewardType: "coins" },
+        { id: "q15", name: "Магнат", desc: "25 зданий одного типа", icon: "🏙️", condition: (s) => s.buildings.some(b => b.count >= 25), reward: 500000, rewardType: "coins" },
+        { id: "q16", name: "Воротила", desc: "50 зданий одного типа", icon: "🏢", condition: (s) => s.buildings.some(b => b.count >= 50), reward: 2000000, rewardType: "coins" },
+        { id: "q17", name: "Олигарх", desc: "75 зданий одного типа", icon: "🏛️", condition: (s) => s.buildings.some(b => b.count >= 75), reward: 10000000, rewardType: "coins" },
+        { id: "q18", name: "Империя", desc: "100 зданий одного типа", icon: "👑", condition: (s) => s.buildings.some(b => b.count >= 100), reward: 50000000, rewardType: "coins" },
+        { id: "q19", name: "Конгломерат", desc: "150 зданий одного типа", icon: "🏰", condition: (s) => s.buildings.some(b => b.count >= 150), reward: 200000000, rewardType: "coins" },
+        { id: "q20", name: "Монополия", desc: "300 зданий одного типа", icon: "🌍", condition: (s) => s.buildings.some(b => b.count >= 300), reward: 1e9, rewardType: "coins" },
+        { id: "q21", name: "Глобал", desc: "500 зданий одного типа", icon: "🌎", condition: (s) => s.buildings.some(b => b.count >= 500), reward: 5e9, rewardType: "coins" },
+        { id: "q22", name: "Космос", desc: "750 зданий одного типа", icon: "🚀", condition: (s) => s.buildings.some(b => b.count >= 750), reward: 2e10, rewardType: "coins" },
+        { id: "q23", name: "Бесконечность", desc: "1000 зданий одного типа", icon: "∞", condition: (s) => s.buildings.some(b => b.count >= 1000), reward: 1e11, rewardType: "coins" },
+        { id: "q24", name: "Перерождение", desc: "1 престиж", icon: "🌟", condition: (s) => s.prestigeLevel >= 1, reward: 1, rewardType: "prestige" },
+        { id: "q25", name: "Ветеран", desc: "3 престижа", icon: "🌠", condition: (s) => s.prestigeLevel >= 3, reward: 3, rewardType: "prestige" },
+        { id: "q26", name: "Мега-рождение", desc: "1 мега-престиж", icon: "🔥", condition: (s) => s.megaPrestigeLevel >= 1, reward: 5, rewardType: "prestige" },
+        { id: "q27", name: "Гипер-рождение", desc: "1 гипер-престиж", icon: "🌈", condition: (s) => s.hyperPrestigeLevel >= 1, reward: 10, rewardType: "prestige" },
+        { id: "q28", name: "Империя", desc: "Все типы зданий", icon: "👑", condition: (s) => s.buildings.every(b => b.count > 0), reward: 100000, rewardType: "coins" },
+        { id: "q29", name: "Мастер всего", desc: "Выполнить 28 квестов", icon: "🏆", condition: (s) => s.quests.filter(q => q.completed).length >= 28, reward: 1.5, rewardType: "global_multiplier" }
+    ];
+
+    const EVENTS = [
+        { id: "coin_rain", name: "Золотой дождь", desc: "x1.5 к доходу на 30 сек!", icon: "🌧️", duration: 30, multiplier: 1.5, color: "#f59e0b" },
+        { id: "frenzy", name: "Монетное безумие", desc: "x2.0 к кликам на 15 сек!", icon: "🌀", duration: 15, clickMult: 2.0, color: "#8b5cf6" },
+        { id: "lucky_day", name: "Счастливый день", desc: "x3.0 ко всему на 15 сек!", icon: "🍀", duration: 15, multiplier: 3.0, color: "#10b981" },
+        { id: "time_boost", name: "Ускорение времени", desc: "x5.0 к доходу на 10 сек!", icon: "⚡", duration: 10, cpsMult: 5.0, color: "#06b6d4" }
+    ];
+
+    const BANK_DEPOSITS = [
+        { label: "1 минута", duration: 1, interest: 2, minAmount: 100 },
+        { label: "5 минут", duration: 5, interest: 12, minAmount: 500 },
+        { label: "15 минут", duration: 15, interest: 40, minAmount: 2000 },
+        { label: "1 час", duration: 60, interest: 200, minAmount: 10000 },
+        { label: "6 часов", duration: 360, interest: 1500, minAmount: 50000 }
+    ];
+
+    const PRESTIGE_REQ = 1000000;
+    const MEGA_PRESTIGE_REQ = 1000000000;
+    const HYPER_PRESTIGE_REQ = 1000000000000;
+
+    const CLOUD_SAVE_KEY = "coinclicker_cloud_save";
+
+    // ---------- СОСТОЯНИЕ ----------
+    let gameState = {
+        coins: 0, totalCoins: 0, totalClicks: 0,
+        prestigeLevel: 0, megaPrestigeLevel: 0, hyperPrestigeLevel: 0,
+        prestigePoints: 0, totalPrestigePoints: 0,
+        nickname: "",
+        upgrades: UPGRADES.map(u => ({ id: u.id, level: 0 })),
+        buildings: BUILDINGS.map(b => ({ id: b.id, count: 0 })),
+        relics: RELICS.map(r => ({ id: r.id, owned: false })),
+        quests: QUESTS.map(q => ({ id: q.id, completed: false, claimed: false })),
+        bankBalance: 0, bankDeposits: [],
+        activeEvent: null, eventEndsAt: 0,
+        eventMultiplier: 1, eventClickMult: 1, eventCpsMult: 1,
+        globalQuestMultiplier: 1
+    };
+
+    let saveTimeout = null;
+    let currentTab = "upgrades";
+
+    function generateRandomNickname() {
+        const adjectives = ["Крутой", "Сильный", "Быстрый", "Храбрый", "Весёлый", "Умный", "Ловкий", "Могучий", "Смелый", "Добрый"];
+        const nouns = ["Игрок", "Герой", "Воин", "Маг", "Кликер", "Боец", "Чемпион", "Легенда", "Мастер", "Король"];
+        const num = Math.floor(Math.random() * 1000);
+        return `${adjectives[Math.floor(Math.random() * adjectives.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}${num}`;
+    }
+
+    function setNickname(name) {
+        gameState.nickname = name.trim().substring(0, 20);
+        autoSaveToCloud();
+        updateUI();
+        if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+    }
+
+    // === ОТПРАВКА РЕКОРДА В ГЛОБАЛЬНЫЙ ТОП ===
+    window.sendRecord = async function() {
+        const name = gameState.nickname || "Аноним";
+        const score = gameState.totalCoins;
+        
+        if (score < 1000) {
+            alert("Набери хотя бы 1000 монет для отправки рекорда!");
+            return;
+        }
+        
+        try {
+            const response = await fetch('https://api.github.com/repos/romanmakin92-dot/coin-clicker/issues', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${GITHUB_TOKEN}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: `Рекорд от ${name}`,
+                    body: `👤 Игрок: ${name}\n💰 Монет: ${Math.floor(score)}\n⭐ Престиж: ${gameState.prestigeLevel}\n🔥 Мега: ${gameState.megaPrestigeLevel}\n🌈 Гипер: ${gameState.hyperPrestigeLevel}`
+                })
+            });
             
-            try {
-                const response = await fetch('https://api.github.com/repos/romanmakin92-dot/coin-clicker/issues', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `token ${GITHUB_TOKEN}`,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        title: `Рекорд от ${name}`,
-                        body: `👤 Игрок: ${name}\n💰 Монет: ${Math.floor(score)}`
-                    })
-                });
-                
-                if (response.ok) {
-                    alert("✅ Рекорд отправлен! Через 30 минут появится в топе.");
-                } else {
-                    alert("❌ Ошибка отправки. Попробуй ещё раз.");
-                }
-            } catch(e) {
-                alert("❌ Ошибка соединения");
-            }
-        }
-        // === КОНЕЦ ВСТАВКИ ===
-
-        // ---------- ДАННЫЕ ----------
-        const UPGRADES = [
-            { id: "sharp_nail", name: "Острый ноготь", icon: "👆", baseCost: 10, maxLevel: 50, cpc: 1, mult: 1.5 },
-            { id: "golden_finger", name: "Золотой палец", icon: "✨", baseCost: 100, maxLevel: 30, cpc: 5, mult: 1.6 },
-            { id: "lucky_charm", name: "Талисман удачи", icon: "🍀", baseCost: 500, maxLevel: 20, cpc: 10, mult: 1.7 },
-            { id: "magic_glove", name: "Магическая перчатка", icon: "🧤", baseCost: 2000, maxLevel: 15, cpc: 25, mult: 1.8 },
-            { id: "dragon_claw", name: "Коготь дракона", icon: "🐉", baseCost: 10000, maxLevel: 10, cpc: 100, mult: 2.0 },
-            { id: "cosmic_fist", name: "Космический кулак", icon: "🌠", baseCost: 100000, maxLevel: 8, cpc: 500, mult: 2.2 },
-            { id: "god_hand", name: "Рука бога", icon: "⚡", baseCost: 2000000, maxLevel: 5, cpc: 5000, mult: 2.5 },
-            { id: "auto_clicker", name: "Авто-кликер", icon: "🤖", baseCost: 50, maxLevel: 40, cpc: 0, cps: 2, mult: 1.5 },
-            { id: "miner", name: "Шахтёр", icon: "⛏️", baseCost: 300, maxLevel: 25, cpc: 0, cps: 10, mult: 1.6 },
-            { id: "time_warp", name: "Искажение времени", icon: "⌛", baseCost: 2500, maxLevel: 15, cpc: 0, cps: 50, mult: 1.8 },
-            { id: "quantum_tap", name: "Квантовый удар", icon: "🔮", baseCost: 500000, maxLevel: 10, cpc: 0, cps: 1000, mult: 2.0 }
-        ];
-
-        const BUILDINGS = [
-            { id: "piggy_bank", name: "Копилка", icon: "🐷", baseCost: 150, cps: 5, mult: 1.15 },
-            { id: "market", name: "Рынок", icon: "🏪", baseCost: 800, cps: 20, mult: 1.15 },
-            { id: "factory", name: "Завод", icon: "🏭", baseCost: 5000, cps: 100, mult: 1.15 },
-            { id: "casino", name: "Казино", icon: "🎰", baseCost: 25000, cps: 500, mult: 1.15 },
-            { id: "bank_branch", name: "Банковский филиал", icon: "🏦", baseCost: 100000, cps: 2000, mult: 1.15 },
-            { id: "crypto_farm", name: "Крипто-ферма", icon: "💻", baseCost: 500000, cps: 10000, mult: 1.15 },
-            { id: "space_mine", name: "Космическая шахта", icon: "🚀", baseCost: 2000000, cps: 50000, mult: 1.15 },
-            { id: "time_machine", name: "Машина времени", icon: "⏰", baseCost: 10000000, cps: 200000, mult: 1.15 },
-            { id: "dark_matter", name: "Тёмная материя", icon: "🌑", baseCost: 100000000, cps: 2000000, mult: 1.15 },
-            { id: "multiverse", name: "Мультивселенная", icon: "🌌", baseCost: 1000000000, cps: 20000000, mult: 1.15 },
-            { id: "god_realm", name: "Царство богов", icon: "🏛️", baseCost: 50000000000, cps: 500000000, mult: 1.15 }
-        ];
-
-        const RELICS = [
-            { id: "golden_egg", name: "Золотое Яйцо", icon: "🥚", cost: 1, bonus: 0.5 },
-            { id: "ancient_coin", name: "Древняя Монета", icon: "🪙", cost: 3, bonus: 1.0 },
-            { id: "philosophers_stone", name: "Философский камень", icon: "💠", cost: 5, bonus: 1.5 },
-            { id: "infinity_gem", name: "Камень Бесконечности", icon: "💎", cost: 10, bonus: 2.0 },
-            { id: "time_crystal", name: "Кристалл Времени", icon: "🔷", cost: 20, bonus: 3.0 },
-            { id: "void_heart", name: "Сердце Пустоты", icon: "🖤", cost: 50, bonus: 5.0 },
-            { id: "cosmic_core", name: "Космическое Ядро", icon: "⭐", cost: 100, bonus: 10.0 },
-            { id: "wisdom_stone", name: "Камень Мудрости", icon: "📖", cost: 150, bonus: 2.0 },
-            { id: "warrior_heart", name: "Сердце Воина", icon: "⚔️", cost: 200, bonus: 3.0 },
-            { id: "dragon_soul", name: "Душа Дракона", icon: "🐲", cost: 300, bonus: 4.0 },
-            { id: "phoenix_feather", name: "Перо Феникса", icon: "🔥", cost: 500, bonus: 5.0 },
-            { id: "godly_essence", name: "Божественная Сущность", icon: "👑", cost: 1000, bonus: 10.0 },
-            { id: "eternity_fragment", name: "Осколок Вечности", icon: "⌛", cost: 2000, bonus: 15.0 },
-            { id: "creator_spark", name: "Искра Создателя", icon: "✨", cost: 5000, bonus: 20.0 }
-        ];
-
-        const QUESTS = [
-            { id: "q1", name: "Кликер", desc: "50 кликов", icon: "👆", condition: (s) => s.totalClicks >= 50, reward: 500, rewardType: "coins" },
-            { id: "q2", name: "Маньяк кликов", desc: "500 кликов", icon: "🖱️", condition: (s) => s.totalClicks >= 500, reward: 5000, rewardType: "coins" },
-            { id: "q3", name: "Кликер-бог", desc: "5000 кликов", icon: "⚡", condition: (s) => s.totalClicks >= 5000, reward: 50000, rewardType: "coins" },
-            { id: "q4", name: "Легенда кликов", desc: "50000 кликов", icon: "🏆", condition: (s) => s.totalClicks >= 50000, reward: 500000, rewardType: "coins" },
-            { id: "q5", name: "Миф кликов", desc: "500000 кликов", icon: "🌟", condition: (s) => s.totalClicks >= 500000, reward: 5000000, rewardType: "coins" },
-            { id: "q6", name: "Бог кликов", desc: "1000000 кликов", icon: "👑", condition: (s) => s.totalClicks >= 1000000, reward: 50000000, rewardType: "coins" },
-            { id: "q7", name: "Накопитель", desc: "1000 монет", icon: "💰", condition: (s) => s.totalCoins >= 1000, reward: 2000, rewardType: "coins" },
-            { id: "q8", name: "Торговец", desc: "100000 монет", icon: "💎", condition: (s) => s.totalCoins >= 100000, reward: 200000, rewardType: "coins" },
-            { id: "q9", name: "Капиталист", desc: "10 млн монет", icon: "🏦", condition: (s) => s.totalCoins >= 10000000, reward: 20000000, rewardType: "coins" },
-            { id: "q10", name: "Миллиардер", desc: "1 млрд монет", icon: "🤑", condition: (s) => s.totalCoins >= 1e9, reward: 200000000, rewardType: "coins" },
-            { id: "q11", name: "Триллионер", desc: "1 трлн монет", icon: "🌌", condition: (s) => s.totalCoins >= 1e12, reward: 2e12, rewardType: "coins" },
-            { id: "q12", name: "Квадриллионер", desc: "1 квадриллион монет", icon: "🌠", condition: (s) => s.totalCoins >= 1e15, reward: 2e15, rewardType: "coins" },
-            { id: "q13", name: "Квинтиллионер", desc: "1 квинтиллион монет", icon: "✨", condition: (s) => s.totalCoins >= 1e18, reward: 2e18, rewardType: "coins" },
-            { id: "q14", name: "Застройщик", desc: "5 зданий одного типа", icon: "🏗️", condition: (s) => s.buildings.some(b => b.count >= 5), reward: 10000, rewardType: "coins" },
-            { id: "q15", name: "Магнат", desc: "25 зданий одного типа", icon: "🏙️", condition: (s) => s.buildings.some(b => b.count >= 25), reward: 500000, rewardType: "coins" },
-            { id: "q16", name: "Воротила", desc: "50 зданий одного типа", icon: "🏢", condition: (s) => s.buildings.some(b => b.count >= 50), reward: 2000000, rewardType: "coins" },
-            { id: "q17", name: "Олигарх", desc: "75 зданий одного типа", icon: "🏛️", condition: (s) => s.buildings.some(b => b.count >= 75), reward: 10000000, rewardType: "coins" },
-            { id: "q18", name: "Империя", desc: "100 зданий одного типа", icon: "👑", condition: (s) => s.buildings.some(b => b.count >= 100), reward: 50000000, rewardType: "coins" },
-            { id: "q19", name: "Конгломерат", desc: "150 зданий одного типа", icon: "🏰", condition: (s) => s.buildings.some(b => b.count >= 150), reward: 200000000, rewardType: "coins" },
-            { id: "q20", name: "Монополия", desc: "300 зданий одного типа", icon: "🌍", condition: (s) => s.buildings.some(b => b.count >= 300), reward: 1e9, rewardType: "coins" },
-            { id: "q21", name: "Глобал", desc: "500 зданий одного типа", icon: "🌎", condition: (s) => s.buildings.some(b => b.count >= 500), reward: 5e9, rewardType: "coins" },
-            { id: "q22", name: "Космос", desc: "750 зданий одного типа", icon: "🚀", condition: (s) => s.buildings.some(b => b.count >= 750), reward: 2e10, rewardType: "coins" },
-            { id: "q23", name: "Бесконечность", desc: "1000 зданий одного типа", icon: "∞", condition: (s) => s.buildings.some(b => b.count >= 1000), reward: 1e11, rewardType: "coins" },
-            { id: "q24", name: "Перерождение", desc: "1 престиж", icon: "🌟", condition: (s) => s.prestigeLevel >= 1, reward: 1, rewardType: "prestige" },
-            { id: "q25", name: "Ветеран", desc: "3 престижа", icon: "🌠", condition: (s) => s.prestigeLevel >= 3, reward: 3, rewardType: "prestige" },
-            { id: "q26", name: "Мега-рождение", desc: "1 мега-престиж", icon: "🔥", condition: (s) => s.megaPrestigeLevel >= 1, reward: 5, rewardType: "prestige" },
-            { id: "q27", name: "Гипер-рождение", desc: "1 гипер-престиж", icon: "🌈", condition: (s) => s.hyperPrestigeLevel >= 1, reward: 10, rewardType: "prestige" },
-            { id: "q28", name: "Империя", desc: "Все типы зданий", icon: "👑", condition: (s) => s.buildings.every(b => b.count > 0), reward: 100000, rewardType: "coins" },
-            { id: "q29", name: "Мастер всего", desc: "Выполнить 28 квестов", icon: "🏆", condition: (s) => s.quests.filter(q => q.completed).length >= 28, reward: 1.5, rewardType: "global_multiplier" }
-        ];
-
-        const EVENTS = [
-            { id: "coin_rain", name: "Золотой дождь", desc: "x1.5 к доходу на 30 сек!", icon: "🌧️", duration: 30, multiplier: 1.5, color: "#f59e0b" },
-            { id: "frenzy", name: "Монетное безумие", desc: "x2.0 к кликам на 15 сек!", icon: "🌀", duration: 15, clickMult: 2.0, color: "#8b5cf6" },
-            { id: "lucky_day", name: "Счастливый день", desc: "x3.0 ко всему на 15 сек!", icon: "🍀", duration: 15, multiplier: 3.0, color: "#10b981" },
-            { id: "time_boost", name: "Ускорение времени", desc: "x5.0 к доходу на 10 сек!", icon: "⚡", duration: 10, cpsMult: 5.0, color: "#06b6d4" }
-        ];
-
-        const BANK_DEPOSITS = [
-            { label: "1 минута", duration: 1, interest: 2, minAmount: 100 },
-            { label: "5 минут", duration: 5, interest: 12, minAmount: 500 },
-            { label: "15 минут", duration: 15, interest: 40, minAmount: 2000 },
-            { label: "1 час", duration: 60, interest: 200, minAmount: 10000 },
-            { label: "6 часов", duration: 360, interest: 1500, minAmount: 50000 }
-        ];
-
-        const PRESTIGE_REQ = 1000000;
-        const MEGA_PRESTIGE_REQ = 1000000000;
-        const HYPER_PRESTIGE_REQ = 1000000000000;
-
-        const CLOUD_SAVE_KEY = "coinclicker_cloud_save";
-        const LEADERBOARD_FILE = "leaderboard.json";
-
-        // ---------- СОСТОЯНИЕ ----------
-        let gameState = {
-            coins: 0, totalCoins: 0, totalClicks: 0,
-            prestigeLevel: 0, megaPrestigeLevel: 0, hyperPrestigeLevel: 0,
-            prestigePoints: 0, totalPrestigePoints: 0,
-            nickname: "",
-            upgrades: UPGRADES.map(u => ({ id: u.id, level: 0 })),
-            buildings: BUILDINGS.map(b => ({ id: b.id, count: 0 })),
-            relics: RELICS.map(r => ({ id: r.id, owned: false })),
-            quests: QUESTS.map(q => ({ id: q.id, completed: false, claimed: false })),
-            bankBalance: 0, bankDeposits: [],
-            activeEvent: null, eventEndsAt: 0,
-            eventMultiplier: 1, eventClickMult: 1, eventCpsMult: 1,
-            globalQuestMultiplier: 1
-        };
-
-        let saveTimeout = null;
-        let currentLeaderboardTab = "prestige";
-        let currentTab = "upgrades";
-
-        function generateRandomNickname() {
-            const adjectives = ["Крутой", "Сильный", "Быстрый", "Храбрый", "Весёлый", "Умный", "Ловкий", "Могучий", "Смелый", "Добрый"];
-            const nouns = ["Игрок", "Герой", "Воин", "Маг", "Кликер", "Боец", "Чемпион", "Легенда", "Мастер", "Король"];
-            const num = Math.floor(Math.random() * 1000);
-            return `${adjectives[Math.floor(Math.random() * adjectives.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}${num}`;
-        }
-
-        function setNickname(name) {
-            gameState.nickname = name.trim().substring(0, 20);
-            autoSaveToCloud();
-            updateUI();
-            if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
-        }
-
-        function getPrestigeBonus() { return gameState.prestigeLevel * 0.5; }
-        function getMegaBonus() { return gameState.megaPrestigeLevel * 2; }
-        function getHyperBonus() { return gameState.hyperPrestigeLevel * 5; }
-        function getRelicBonus() { let bonus = 0; gameState.relics.forEach(r => { if (r.owned) { const def = RELICS.find(x => x.id === r.id); if (def) bonus += def.bonus; } }); return bonus; }
-        function getTotalMultiplier() { return 1 + getPrestigeBonus() + getMegaBonus() + getHyperBonus() + getRelicBonus(); }
-
-        function calcCPC() {
-            let bonus = 0;
-            gameState.upgrades.forEach(u => { const def = UPGRADES.find(x => x.id === u.id); if (def) bonus += (def.cpc || 0) * u.level; });
-            const base = 1 + bonus;
-            let mult = getTotalMultiplier();
-            if (gameState.activeEvent && gameState.eventClickMult > 1) mult *= gameState.eventClickMult;
-            return Math.floor(base * mult * gameState.globalQuestMultiplier);
-        }
-
-        function calcCPS() {
-            let fromUps = 0, fromBlds = 0;
-            gameState.upgrades.forEach(u => { const def = UPGRADES.find(x => x.id === u.id); if (def && def.cps) fromUps += def.cps * u.level; });
-            gameState.buildings.forEach(b => { const def = BUILDINGS.find(x => x.id === b.id); if (def) fromBlds += def.cps * b.count; });
-            let mult = getTotalMultiplier();
-            if (gameState.activeEvent && gameState.eventMultiplier > 1) mult *= gameState.eventMultiplier;
-            if (gameState.activeEvent && gameState.eventCpsMult > 1) mult *= gameState.eventCpsMult;
-            return Math.floor((fromUps + fromBlds) * mult * gameState.globalQuestMultiplier);
-        }
-
-        function formatNumber(n) {
-            if (typeof n !== 'number' || isNaN(n)) n = 0;
-            if (n >= 1e18) return (n/1e18).toFixed(2) + "Кв";
-            if (n >= 1e15) return (n/1e15).toFixed(2) + "Кд";
-            if (n >= 1e12) return (n/1e12).toFixed(2) + "Т";
-            if (n >= 1e9) return (n/1e9).toFixed(2) + "М";
-            if (n >= 1e6) return (n/1e6).toFixed(2) + "млн";
-            if (n >= 1e3) return (n/1e3).toFixed(1) + "к";
-            return Math.floor(n).toString();
-        }
-
-        function addParticle(x, y, value) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.innerText = `+${formatNumber(value)}`;
-            particle.style.left = (x - 20) + 'px';
-            particle.style.top = (y - 20) + 'px';
-            document.body.appendChild(particle);
-            setTimeout(() => particle.remove(), 500);
-        }
-
-        // Глобальные функции
-        window.clickCoin = function() {
-            const cpc = calcCPC();
-            gameState.coins += cpc;
-            gameState.totalCoins += cpc;
-            gameState.totalClicks++;
-            const rect = document.getElementById("coinBtn").getBoundingClientRect();
-            addParticle(rect.left + rect.width/2, rect.top + rect.height/2, cpc);
-            const btn = document.getElementById("coinBtn");
-            btn.style.transform = "scale(0.93)";
-            setTimeout(() => btn.style.transform = "scale(1)", 100);
-            updateUI();
-            autoSaveToCloud();
-            checkQuests();
-        };
-
-        window.buyUpgrade = function(id) {
-            const def = UPGRADES.find(u => u.id === id);
-            const saved = gameState.upgrades.find(u => u.id === id);
-            if (!def || !saved || saved.level >= def.maxLevel) return;
-            const cost = Math.floor(def.baseCost * Math.pow(def.mult, saved.level));
-            if (gameState.coins < cost) return;
-            gameState.coins -= cost;
-            saved.level++;
-            updateUI();
-            autoSaveToCloud();
-        };
-
-        window.buyBuilding = function(id) {
-            const def = BUILDINGS.find(b => b.id === id);
-            const saved = gameState.buildings.find(b => b.id === id);
-            if (!def || !saved) return;
-            const cost = Math.floor(def.baseCost * Math.pow(def.mult, saved.count));
-            if (gameState.coins < cost) return;
-            gameState.coins -= cost;
-            saved.count++;
-            updateUI();
-            autoSaveToCloud();
-            checkQuests();
-        };
-
-        window.buyRelic = function(id) {
-            const def = RELICS.find(r => r.id === id);
-            const saved = gameState.relics.find(r => r.id === id);
-            if (!def || saved.owned) return;
-            if (gameState.prestigePoints < def.cost) return;
-            gameState.prestigePoints -= def.cost;
-            saved.owned = true;
-            updateUI();
-            autoSaveToCloud();
-        };
-
-        window.doPrestige = function() {
-            if (gameState.coins < PRESTIGE_REQ) return;
-            gameState.bankDeposits = [];
-            gameState.prestigeLevel++;
-            const pts = Math.floor(Math.log10(gameState.coins / PRESTIGE_REQ) * 3 + 1);
-            gameState.prestigePoints += pts;
-            gameState.totalPrestigePoints += pts;
-            gameState.coins = 0;
-            gameState.upgrades.forEach(u => u.level = 0);
-            gameState.buildings.forEach(b => b.count = 0);
-            updateUI();
-            autoSaveToCloud();
-            checkQuests();
-        };
-
-        window.doMegaPrestige = function() {
-            if (gameState.coins < MEGA_PRESTIGE_REQ) return;
-            gameState.bankDeposits = [];
-            gameState.megaPrestigeLevel++;
-            const pts = Math.floor(Math.log10(gameState.coins / MEGA_PRESTIGE_REQ) * 5 + 5);
-            gameState.prestigePoints += pts;
-            gameState.totalPrestigePoints += pts;
-            gameState.coins = 0;
-            gameState.upgrades.forEach(u => u.level = 0);
-            gameState.buildings.forEach(b => b.count = 0);
-            updateUI();
-            autoSaveToCloud();
-        };
-
-        window.doHyperPrestige = function() {
-            if (gameState.coins < HYPER_PRESTIGE_REQ) return;
-            gameState.bankDeposits = [];
-            gameState.hyperPrestigeLevel++;
-            const pts = Math.floor(Math.log10(gameState.coins / HYPER_PRESTIGE_REQ) * 10 + 20);
-            gameState.prestigePoints += pts;
-            gameState.totalPrestigePoints += pts;
-            gameState.coins = 0;
-            gameState.upgrades.forEach(u => u.level = 0);
-            gameState.buildings.forEach(b => b.count = 0);
-            updateUI();
-            autoSaveToCloud();
-        };
-
-        window.claimQuest = function(id) {
-            const q = gameState.quests.find(x => x.id === id);
-            const def = QUESTS.find(x => x.id === id);
-            if (!q || !q.completed || q.claimed) return;
-            q.claimed = true;
-            if (def.rewardType === "coins") {
-                gameState.coins += def.reward;
-                gameState.totalCoins += def.reward;
-            } else if (def.rewardType === "prestige") {
-                gameState.prestigePoints += def.reward;
-                gameState.totalPrestigePoints += def.reward;
-            } else if (def.rewardType === "global_multiplier") {
-                gameState.globalQuestMultiplier *= def.reward;
-            }
-            updateUI();
-            autoSaveToCloud();
-        };
-
-        window.depositToBank = function(amount, duration, interest, label) {
-            if (gameState.coins < amount) return;
-            gameState.coins -= amount;
-            gameState.bankDeposits.push({ id: Date.now(), amount, interest, startTime: Date.now(), duration, label });
-            autoSaveToCloud();
-            updateUI();
-        };
-
-        window.withdrawBank = function() {
-            if (gameState.bankBalance <= 0) return;
-            gameState.coins += gameState.bankBalance;
-            gameState.totalCoins += gameState.bankBalance;
-            gameState.bankBalance = 0;
-            autoSaveToCloud();
-            updateUI();
-        };
-
-        window.depositPrompt = function(index) {
-            const dep = BANK_DEPOSITS[index];
-            const amount = prompt(`Сколько монет положить? (мин. ${formatNumber(dep.minAmount)})`, String(dep.minAmount));
-            if (amount) {
-                const num = parseInt(amount);
-                if (!isNaN(num) && num >= dep.minAmount && num <= gameState.coins) {
-                    window.depositToBank(num, dep.duration, dep.interest, dep.label);
-                } else {
-                    alert(`Введите сумму от ${formatNumber(dep.minAmount)} до ${formatNumber(gameState.coins)}`);
-                }
-            }
-        };
-
-        // Глобальный топ: загрузка и отображение
-        async function loadGlobalLeaderboard() {
-            try {
-                const response = await fetch('leaderboard.json');
-                const players = await response.json();
-                return players;
-            } catch(e) {
-                console.error("Ошибка загрузки топа:", e);
-                return [];
-            }
-        }
-
-        async function renderGlobalLeaderboard() {
-            const container = document.getElementById("tabContent");
-            if (!container) return;
-            
-            const players = await loadGlobalLeaderboard();
-            
-            let html = `<h2>🏆 Глобальный топ (обновляется раз в 30 минут)</h2>`;
-            
-            if (!players.length) {
-                html += `<div style="color:#92400e; text-align:center; padding:20px">Пока никого нет. Будь первым!</div>`;
+            if (response.ok) {
+                alert("✅ Рекорд отправлен! Через 30 минут появится в глобальном топе.");
             } else {
-                players.slice(0, 20).forEach((player, i) => {
-                    const medals = ["🥇", "🥈", "🥉"];
-                    const rank = i < 3 ? medals[i] : `#${i+1}`;
-                    const isMe = player.name === gameState.nickname;
-                    html += `<div class="leaderboard-entry" style="${isMe ? 'border:1px solid #fbbf24' : ''}">
-                                <div class="leaderboard-rank">${rank}</div>
-                                <div class="leaderboard-name">${player.name}${isMe ? ' 👈' : ''}</div>
-                                <div class="leaderboard-value">💰 ${formatNumber(player.score)}</div>
-                            </div>`;
-                });
+                alert("❌ Ошибка отправки. Попробуй ещё раз.");
             }
-            
+        } catch(e) {
+            alert("❌ Ошибка соединения");
+        }
+    };
+
+    function getPrestigeBonus() { return gameState.prestigeLevel * 0.5; }
+    function getMegaBonus() { return gameState.megaPrestigeLevel * 2; }
+    function getHyperBonus() { return gameState.hyperPrestigeLevel * 5; }
+    function getRelicBonus() { let bonus = 0; gameState.relics.forEach(r => { if (r.owned) { const def = RELICS.find(x => x.id === r.id); if (def) bonus += def.bonus; } }); return bonus; }
+    function getTotalMultiplier() { return 1 + getPrestigeBonus() + getMegaBonus() + getHyperBonus() + getRelicBonus(); }
+
+    function calcCPC() {
+        let bonus = 0;
+        gameState.upgrades.forEach(u => { const def = UPGRADES.find(x => x.id === u.id); if (def) bonus += (def.cpc || 0) * u.level; });
+        const base = 1 + bonus;
+        let mult = getTotalMultiplier();
+        if (gameState.activeEvent && gameState.eventClickMult > 1) mult *= gameState.eventClickMult;
+        return Math.floor(base * mult * gameState.globalQuestMultiplier);
+    }
+
+    function calcCPS() {
+        let fromUps = 0, fromBlds = 0;
+        gameState.upgrades.forEach(u => { const def = UPGRADES.find(x => x.id === u.id); if (def && def.cps) fromUps += def.cps * u.level; });
+        gameState.buildings.forEach(b => { const def = BUILDINGS.find(x => x.id === b.id); if (def) fromBlds += def.cps * b.count; });
+        let mult = getTotalMultiplier();
+        if (gameState.activeEvent && gameState.eventMultiplier > 1) mult *= gameState.eventMultiplier;
+        if (gameState.activeEvent && gameState.eventCpsMult > 1) mult *= gameState.eventCpsMult;
+        return Math.floor((fromUps + fromBlds) * mult * gameState.globalQuestMultiplier);
+    }
+
+    function formatNumber(n) {
+        if (typeof n !== 'number' || isNaN(n)) n = 0;
+        if (n >= 1e18) return (n/1e18).toFixed(2) + "Кв";
+        if (n >= 1e15) return (n/1e15).toFixed(2) + "Кд";
+        if (n >= 1e12) return (n/1e12).toFixed(2) + "Т";
+        if (n >= 1e9) return (n/1e9).toFixed(2) + "М";
+        if (n >= 1e6) return (n/1e6).toFixed(2) + "млн";
+        if (n >= 1e3) return (n/1e3).toFixed(1) + "к";
+        return Math.floor(n).toString();
+    }
+
+    function addParticle(x, y, value) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.innerText = `+${formatNumber(value)}`;
+        particle.style.left = (x - 20) + 'px';
+        particle.style.top = (y - 20) + 'px';
+        document.body.appendChild(particle);
+        setTimeout(() => particle.remove(), 500);
+    }
+
+    // Глобальный топ: загрузка и отображение
+    async function loadGlobalLeaderboard() {
+        try {
+            const response = await fetch('leaderboard.json');
+            const players = await response.json();
+            return players;
+        } catch(e) {
+            console.error("Ошибка загрузки топа:", e);
+            return [];
+        }
+    }
+
+    async function renderGlobalLeaderboard() {
+        const container = document.getElementById("tabContent");
+        if (!container) return;
+        
+        const players = await loadGlobalLeaderboard();
+        
+        let html = `<h2>🏆 Глобальный топ (обновляется раз в 30 минут)</h2>`;
+        
+        if (!players.length) {
+            html += `<div style="color:#92400e; text-align:center; padding:20px">Пока никого нет. Будь первым!</div>`;
+        } else {
+            players.slice(0, 20).forEach((player, i) => {
+                const medals = ["🥇", "🥈", "🥉"];
+                const rank = i < 3 ? medals[i] : `#${i+1}`;
+                const isMe = player.name === gameState.nickname;
+                html += `<div class="leaderboard-entry" style="${isMe ? 'border:1px solid #fbbf24' : ''}">
+                            <div class="leaderboard-rank">${rank}</div>
+                            <div class="leaderboard-name">${player.name}${isMe ? ' 👈' : ''}</div>
+                            <div class="leaderboard-value">💰 ${formatNumber(player.score)}</div>
+                        </div>`;
+            });
+        }
+        
+        container.innerHTML = html;
+    }
+
+    // Игровые действия
+    window.clickCoin = function() {
+        const cpc = calcCPC();
+        gameState.coins += cpc;
+        gameState.totalCoins += cpc;
+        gameState.totalClicks++;
+        const rect = document.getElementById("coinBtn").getBoundingClientRect();
+        addParticle(rect.left + rect.width/2, rect.top + rect.height/2, cpc);
+        const btn = document.getElementById("coinBtn");
+        btn.style.transform = "scale(0.93)";
+        setTimeout(() => btn.style.transform = "scale(1)", 100);
+        updateUI();
+        autoSaveToCloud();
+        checkQuests();
+    };
+
+    window.buyUpgrade = function(id) {
+        const def = UPGRADES.find(u => u.id === id);
+        const saved = gameState.upgrades.find(u => u.id === id);
+        if (!def || !saved || saved.level >= def.maxLevel) return;
+        const cost = Math.floor(def.baseCost * Math.pow(def.mult, saved.level));
+        if (gameState.coins < cost) return;
+        gameState.coins -= cost;
+        saved.level++;
+        updateUI();
+        autoSaveToCloud();
+    };
+
+    window.buyBuilding = function(id) {
+        const def = BUILDINGS.find(b => b.id === id);
+        const saved = gameState.buildings.find(b => b.id === id);
+        if (!def || !saved) return;
+        const cost = Math.floor(def.baseCost * Math.pow(def.mult, saved.count));
+        if (gameState.coins < cost) return;
+        gameState.coins -= cost;
+        saved.count++;
+        updateUI();
+        autoSaveToCloud();
+        checkQuests();
+    };
+
+    window.buyRelic = function(id) {
+        const def = RELICS.find(r => r.id === id);
+        const saved = gameState.relics.find(r => r.id === id);
+        if (!def || saved.owned) return;
+        if (gameState.prestigePoints < def.cost) return;
+        gameState.prestigePoints -= def.cost;
+        saved.owned = true;
+        updateUI();
+        autoSaveToCloud();
+    };
+
+    window.doPrestige = function() {
+        if (gameState.coins < PRESTIGE_REQ) return;
+        gameState.bankDeposits = [];
+        gameState.prestigeLevel++;
+        const pts = Math.floor(Math.log10(gameState.coins / PRESTIGE_REQ) * 3 + 1);
+        gameState.prestigePoints += pts;
+        gameState.totalPrestigePoints += pts;
+        gameState.coins = 0;
+        gameState.upgrades.forEach(u => u.level = 0);
+        gameState.buildings.forEach(b => b.count = 0);
+        updateUI();
+        autoSaveToCloud();
+        checkQuests();
+    };
+
+    window.doMegaPrestige = function() {
+        if (gameState.coins < MEGA_PRESTIGE_REQ) return;
+        gameState.bankDeposits = [];
+        gameState.megaPrestigeLevel++;
+        const pts = Math.floor(Math.log10(gameState.coins / MEGA_PRESTIGE_REQ) * 5 + 5);
+        gameState.prestigePoints += pts;
+        gameState.totalPrestigePoints += pts;
+        gameState.coins = 0;
+        gameState.upgrades.forEach(u => u.level = 0);
+        gameState.buildings.forEach(b => b.count = 0);
+        updateUI();
+        autoSaveToCloud();
+    };
+
+    window.doHyperPrestige = function() {
+        if (gameState.coins < HYPER_PRESTIGE_REQ) return;
+        gameState.bankDeposits = [];
+        gameState.hyperPrestigeLevel++;
+        const pts = Math.floor(Math.log10(gameState.coins / HYPER_PRESTIGE_REQ) * 10 + 20);
+        gameState.prestigePoints += pts;
+        gameState.totalPrestigePoints += pts;
+        gameState.coins = 0;
+        gameState.upgrades.forEach(u => u.level = 0);
+        gameState.buildings.forEach(b => b.count = 0);
+        updateUI();
+        autoSaveToCloud();
+    };
+
+    window.claimQuest = function(id) {
+        const q = gameState.quests.find(x => x.id === id);
+        const def = QUESTS.find(x => x.id === id);
+        if (!q || !q.completed || q.claimed) return;
+        q.claimed = true;
+        if (def.rewardType === "coins") {
+            gameState.coins += def.reward;
+            gameState.totalCoins += def.reward;
+        } else if (def.rewardType === "prestige") {
+            gameState.prestigePoints += def.reward;
+            gameState.totalPrestigePoints += def.reward;
+        } else if (def.rewardType === "global_multiplier") {
+            gameState.globalQuestMultiplier *= def.reward;
+        }
+        updateUI();
+        autoSaveToCloud();
+    };
+
+    window.depositToBank = function(amount, duration, interest, label) {
+        if (gameState.coins < amount) return;
+        gameState.coins -= amount;
+        gameState.bankDeposits.push({ id: Date.now(), amount, interest, startTime: Date.now(), duration, label });
+        autoSaveToCloud();
+        updateUI();
+    };
+
+    window.withdrawBank = function() {
+        if (gameState.bankBalance <= 0) return;
+        gameState.coins += gameState.bankBalance;
+        gameState.totalCoins += gameState.bankBalance;
+        gameState.bankBalance = 0;
+        autoSaveToCloud();
+        updateUI();
+    };
+
+    window.depositPrompt = function(index) {
+        const dep = BANK_DEPOSITS[index];
+        const amount = prompt(`Сколько монет положить? (мин. ${formatNumber(dep.minAmount)})`, String(dep.minAmount));
+        if (amount) {
+            const num = parseInt(amount);
+            if (!isNaN(num) && num >= dep.minAmount && num <= gameState.coins) {
+                window.depositToBank(num, dep.duration, dep.interest, dep.label);
+            } else {
+                alert(`Введите сумму от ${formatNumber(dep.minAmount)} до ${formatNumber(gameState.coins)}`);
+            }
+        }
+    };
+
+    function checkQuests() {
+        let changed = false;
+        gameState.quests.forEach(q => {
+            if (q.completed) return;
+            const def = QUESTS.find(x => x.id === q.id);
+            if (def && def.condition(gameState)) {
+                q.completed = true;
+                changed = true;
+            }
+        });
+        if (changed) {
+            updateUI();
+            autoSaveToCloud();
+        }
+    }
+
+    function checkBankMaturity() {
+        let changed = false;
+        const now = Date.now();
+        let newBalance = gameState.bankBalance;
+        const remaining = [];
+        gameState.bankDeposits.forEach(dep => {
+            const elapsed = (now - dep.startTime) / 60000;
+            if (elapsed >= dep.duration) {
+                newBalance += dep.amount * (1 + dep.interest / 100);
+                changed = true;
+            } else {
+                remaining.push(dep);
+            }
+        });
+        if (changed) {
+            gameState.bankBalance = newBalance;
+            gameState.bankDeposits = remaining;
+            autoSaveToCloud();
+            updateUI();
+        }
+    }
+
+    function checkEvent() {
+        if (gameState.activeEvent) {
+            if (Date.now() >= gameState.eventEndsAt) {
+                gameState.activeEvent = null;
+                gameState.eventMultiplier = 1;
+                gameState.eventClickMult = 1;
+                gameState.eventCpsMult = 1;
+                document.getElementById("eventBanner")?.remove();
+                updateUI();
+                autoSaveToCloud();
+            }
+        } else if (gameState.totalCoins > 1000 && Math.random() < 0.003) {
+            const ev = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+            gameState.activeEvent = ev.id;
+            gameState.eventEndsAt = Date.now() + ev.duration * 1000;
+            gameState.eventMultiplier = ev.multiplier || 1;
+            gameState.eventClickMult = ev.clickMult || 1;
+            gameState.eventCpsMult = ev.cpsMult || 1;
+            const banner = document.createElement('div');
+            banner.id = "eventBanner";
+            banner.className = "event-banner";
+            banner.style.background = ev.color;
+            banner.innerHTML = `${ev.icon} ${ev.name} — ${ev.desc} <span id="eventTimer"></span>`;
+            document.body.insertBefore(banner, document.body.firstChild);
+            updateUI();
+            autoSaveToCloud();
+        }
+        if (gameState.activeEvent) {
+            const banner = document.getElementById("eventBanner");
+            if (banner) {
+                const remaining = Math.max(0, Math.floor((gameState.eventEndsAt - Date.now()) / 1000));
+                const timer = banner.querySelector("#eventTimer");
+                if (timer) timer.innerText = `${remaining}с`;
+            }
+        }
+    }
+
+    let lastTick = Date.now();
+    function passiveIncome() {
+        const now = Date.now();
+        const delta = Math.min((now - lastTick) / 1000, 0.1);
+        if (delta >= 0.05) {
+            const cps = calcCPS();
+            const earned = cps * delta;
+            if (earned > 0) {
+                gameState.coins += earned;
+                gameState.totalCoins += earned;
+                updateUI();
+                autoSaveToCloud();
+            }
+            lastTick = now;
+        }
+        requestAnimationFrame(passiveIncome);
+    }
+
+    function updateUI() {
+        document.getElementById("coins").innerText = formatNumber(gameState.coins);
+        document.getElementById("cpc").innerText = formatNumber(calcCPC());
+        document.getElementById("cps").innerText = formatNumber(calcCPS());
+        const totalMult = getTotalMultiplier() * gameState.globalQuestMultiplier;
+        document.getElementById("totalMultiplier").innerHTML = `📊 Общий множитель: x${totalMult.toFixed(2)} (⭐+${getPrestigeBonus().toFixed(1)} 🔥+${getMegaBonus()} 🌈+${getHyperBonus()} 💎+${getRelicBonus().toFixed(1)} ✨x${gameState.globalQuestMultiplier})`;
+        document.getElementById("prestigePoints").innerHTML = `✨ Очки престижа: ${gameState.prestigePoints} (всего: ${gameState.totalPrestigePoints})`;
+        if (gameState.bankBalance > 0) document.getElementById("bankBalance").innerHTML = `🏦 В банке: ${formatNumber(gameState.bankBalance)}`;
+        else document.getElementById("bankBalance").innerHTML = "";
+        document.getElementById("nicknameBtn").innerHTML = gameState.nickname ? `👤 ${gameState.nickname} ✏️` : `👤 Установить ник`;
+        renderTab(currentTab);
+    }
+
+    async function renderTab(tab) {
+        currentTab = tab;
+        const container = document.getElementById("tabContent");
+        if (!container) return;
+        
+        if (tab === "upgrades") {
+            let html = `<h2>⚡ Улучшения</h2>`;
+            UPGRADES.forEach(u => {
+                const saved = gameState.upgrades.find(x => x.id === u.id);
+                const level = saved?.level || 0;
+                const cost = Math.floor(u.baseCost * Math.pow(u.mult, level));
+                const maxed = level >= u.maxLevel;
+                html += `<div class="item">
+                    <div class="item-icon">${u.icon}</div>
+                    <div class="item-info">
+                        <div class="item-name">${u.name}</div>
+                        <div class="item-desc">${u.cpc > 0 ? `+${u.cpc} за клик` : `+${u.cps}/сек`}</div>
+                        <div class="item-level">Ур. ${level}/${u.maxLevel}</div>
+                    </div>
+                    <button class="buy-btn" onclick="buyUpgrade('${u.id}')" ${maxed || gameState.coins < cost ? 'disabled' : ''}>${maxed ? '✅ Макс' : `💰 ${formatNumber(cost)}`}</button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        } 
+        else if (tab === "buildings") {
+            let html = `<h2>🏗️ Здания</h2>`;
+            BUILDINGS.forEach(b => {
+                const saved = gameState.buildings.find(x => x.id === b.id);
+                const count = saved?.count || 0;
+                const cost = Math.floor(b.baseCost * Math.pow(b.mult, count));
+                const total = b.cps * count;
+                html += `<div class="item">
+                    <div class="item-icon">${b.icon}</div>
+                    <div class="item-info">
+                        <div class="item-name">${b.name}</div>
+                        <div class="item-desc">+${formatNumber(b.cps)}/сек</div>
+                        ${count > 0 ? `<div class="item-level">Кол-во: ${count} (${formatNumber(total)}/сек)</div>` : ''}
+                    </div>
+                    <button class="buy-btn" onclick="buyBuilding('${b.id}')" ${gameState.coins < cost ? 'disabled' : ''}>💰 ${formatNumber(cost)}</button>
+                </div>`;
+            });
             container.innerHTML = html;
         }
-
-        function checkQuests() {
-            let changed = false;
-            gameState.quests.forEach(q => {
-                if (q.completed) return;
-                const def = QUESTS.find(x => x.id === q.id);
-                if (def && def.condition(gameState)) {
-                    q.completed = true;
-                    changed = true;
-                }
+        else if (tab === "prestige") {
+            const prestigeProgress = Math.min((gameState.coins / PRESTIGE_REQ) * 100, 100);
+            const megaProgress = Math.min((gameState.coins / MEGA_PRESTIGE_REQ) * 100, 100);
+            const hyperProgress = Math.min((gameState.coins / HYPER_PRESTIGE_REQ) * 100, 100);
+            container.innerHTML = `<h2>🌟 Система перерождений</h2>
+                <div class="prestige-card"><div style="display:flex; justify-content:space-between"><span>⭐ Престиж: ${gameState.prestigeLevel} (+${getPrestigeBonus().toFixed(1)} к множителю)</span></div><div class="progress-bar"><div class="progress-fill" style="width:${prestigeProgress}%"></div></div><div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(PRESTIGE_REQ)}</div><button class="buy-btn" onclick="doPrestige()" ${gameState.coins < PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">✨ Обычный престиж (+0.5)</button></div>
+                <div class="prestige-card"><div style="display:flex; justify-content:space-between"><span>🔥 Мега-престиж: ${gameState.megaPrestigeLevel} (+${getMegaBonus()} к множителю)</span></div><div class="progress-bar"><div class="progress-fill" style="width:${megaProgress}%"></div></div><div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(MEGA_PRESTIGE_REQ)} (1 млрд)</div><button class="buy-btn" onclick="doMegaPrestige()" ${gameState.coins < MEGA_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🔥 Мега-престиж (+2)</button></div>
+                <div class="prestige-card"><div style="display:flex; justify-content:space-between"><span>🌈 Гипер-престиж: ${gameState.hyperPrestigeLevel} (+${getHyperBonus()} к множителю)</span></div><div class="progress-bar"><div class="progress-fill" style="width:${hyperProgress}%"></div></div><div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(HYPER_PRESTIGE_REQ)} (1 трлн)</div><button class="buy-btn" onclick="doHyperPrestige()" ${gameState.coins < HYPER_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🌈 Гипер-престиж (+5)</button></div>`;
+        }
+        else if (tab === "relics") {
+            let html = `<h2>💎 Реликвии</h2><div style="display:flex; flex-wrap:wrap"><div style="width:100%; margin-bottom:8px; text-align:center">✨ Бонус от реликвий: +${getRelicBonus().toFixed(1)} к множителю</div>`;
+            RELICS.forEach(r => {
+                const owned = gameState.relics.find(x => x.id === r.id)?.owned;
+                html += `<div class="relic-item">
+                    <div style="font-size:32px">${r.icon}</div>
+                    <div style="font-weight:700">${r.name}</div>
+                    <div style="font-size:10px; color:#92400e">+${r.bonus} к множителю</div>
+                    <button class="buy-btn" onclick="buyRelic('${r.id}')" ${owned || gameState.prestigePoints < r.cost ? 'disabled' : ''} style="margin-top:5px">${owned ? '✅ Получено' : `✨ ${r.cost} очков`}</button>
+                </div>`;
             });
-            if (changed) {
-                updateUI();
-                autoSaveToCloud();
-            }
+            html += `</div><div style="margin-top:12px; font-size:11px; color:#92400e">⭐ Реликвии покупаются за очки престижа и не сбрасываются</div>`;
+            container.innerHTML = html;
         }
-
-        function checkBankMaturity() {
-            let changed = false;
-            const now = Date.now();
-            let newBalance = gameState.bankBalance;
-            const remaining = [];
-            gameState.bankDeposits.forEach(dep => {
-                const elapsed = (now - dep.startTime) / 60000;
-                if (elapsed >= dep.duration) {
-                    newBalance += dep.amount * (1 + dep.interest / 100);
-                    changed = true;
-                } else {
-                    remaining.push(dep);
-                }
-            });
-            if (changed) {
-                gameState.bankBalance = newBalance;
-                gameState.bankDeposits = remaining;
-                autoSaveToCloud();
-                updateUI();
-            }
-        }
-
-        function checkEvent() {
-            if (gameState.activeEvent) {
-                if (Date.now() >= gameState.eventEndsAt) {
-                    gameState.activeEvent = null;
-                    gameState.eventMultiplier = 1;
-                    gameState.eventClickMult = 1;
-                    gameState.eventCpsMult = 1;
-                    document.getElementById("eventBanner")?.remove();
-                    updateUI();
-                    autoSaveToCloud();
-                }
-            } else if (gameState.totalCoins > 1000 && Math.random() < 0.003) {
-                const ev = EVENTS[Math.floor(Math.random() * EVENTS.length)];
-                gameState.activeEvent = ev.id;
-                gameState.eventEndsAt = Date.now() + ev.duration * 1000;
-                gameState.eventMultiplier = ev.multiplier || 1;
-                gameState.eventClickMult = ev.clickMult || 1;
-                gameState.eventCpsMult = ev.cpsMult || 1;
-                const banner = document.createElement('div');
-                banner.id = "eventBanner";
-                banner.className = "event-banner";
-                banner.style.background = ev.color;
-                banner.innerHTML = `${ev.icon} ${ev.name} — ${ev.desc} <span id="eventTimer"></span>`;
-                document.body.insertBefore(banner, document.body.firstChild);
-                updateUI();
-                autoSaveToCloud();
-            }
-            if (gameState.activeEvent) {
-                const banner = document.getElementById("eventBanner");
-                if (banner) {
-                    const remaining = Math.max(0, Math.floor((gameState.eventEndsAt - Date.now()) / 1000));
-                    const timer = banner.querySelector("#eventTimer");
-                    if (timer) timer.innerText = `${remaining}с`;
-                }
-            }
-        }
-
-        let lastTick = Date.now();
-        function passiveIncome() {
-            const now = Date.now();
-            const delta = Math.min((now - lastTick) / 1000, 0.1);
-            if (delta >= 0.05) {
-                const cps = calcCPS();
-                const earned = cps * delta;
-                if (earned > 0) {
-                    gameState.coins += earned;
-                    gameState.totalCoins += earned;
-                    updateUI();
-                    autoSaveToCloud();
-                }
-                lastTick = now;
-            }
-            requestAnimationFrame(passiveIncome);
-        }
-
-        function updateUI() {
-            document.getElementById("coins").innerText = formatNumber(gameState.coins);
-            document.getElementById("cpc").innerText = formatNumber(calcCPC());
-            document.getElementById("cps").innerText = formatNumber(calcCPS());
-            const totalMult = getTotalMultiplier() * gameState.globalQuestMultiplier;
-            document.getElementById("totalMultiplier").innerHTML = `📊 Общий множитель: x${totalMult.toFixed(2)} (⭐+${getPrestigeBonus().toFixed(1)} 🔥+${getMegaBonus()} 🌈+${getHyperBonus()} 💎+${getRelicBonus().toFixed(1)} ✨x${gameState.globalQuestMultiplier})`;
-            document.getElementById("prestigePoints").innerHTML = `✨ Очки престижа: ${gameState.prestigePoints} (всего: ${gameState.totalPrestigePoints})`;
-            if (gameState.bankBalance > 0) document.getElementById("bankBalance").innerHTML = `🏦 В банке: ${formatNumber(gameState.bankBalance)}`;
-            else document.getElementById("bankBalance").innerHTML = "";
-            document.getElementById("nicknameBtn").innerHTML = gameState.nickname ? `👤 ${gameState.nickname} ✏️` : `👤 Установить ник`;
-            renderTab(currentTab);
-        }
-
-        function renderTab(tab) {
-            currentTab = tab;
-            const container = document.getElementById("tabContent");
-            if (!container) return;
-            
-            if (tab === "upgrades") {
-                let html = `<h2>⚡ Улучшения</h2>`;
-                UPGRADES.forEach(u => {
-                    const saved = gameState.upgrades.find(x => x.id === u.id);
-                    const level = saved?.level || 0;
-                    const cost = Math.floor(u.baseCost * Math.pow(u.mult, level));
-                    const maxed = level >= u.maxLevel;
-                    html += `<div class="item">
-                        <div class="item-icon">${u.icon}</div>
-                        <div class="item-info">
-                            <div class="item-name">${u.name}</div>
-                            <div class="item-desc">${u.cpc > 0 ? `+${u.cpc} за клик` : `+${u.cps}/сек`}</div>
-                            <div class="item-level">Ур. ${level}/${u.maxLevel}</div>
+        else if (tab === "quests") {
+            let html = `<h2>📜 Квесты ${gameState.globalQuestMultiplier > 1 ? `(✨ x${gameState.globalQuestMultiplier} ко всему!)` : ''}</h2>`;
+            QUESTS.forEach(qDef => {
+                const q = gameState.quests.find(x => x.id === qDef.id);
+                const completed = q?.completed;
+                const claimed = q?.claimed;
+                let rewardText = "";
+                if (qDef.rewardType === "coins") rewardText = `${formatNumber(qDef.reward)} монет`;
+                else if (qDef.rewardType === "prestige") rewardText = `${qDef.reward} очков престижа`;
+                else rewardText = `x${qDef.reward} к множителю!`;
+                html += `<div class="quest-item">
+                    <div style="display:flex; align-items:center; gap:8px">
+                        <span style="font-size:24px">${qDef.icon}</span>
+                        <div style="flex:1">
+                            <div style="font-weight:700">${qDef.name}</div>
+                            <div style="font-size:11px; color:#92400e">${qDef.desc}</div>
+                            <div style="font-size:10px; color:#6ee7b7">Награда: ${rewardText}</div>
                         </div>
-                        <button class="buy-btn" onclick="buyUpgrade('${u.id}')" ${maxed || gameState.coins < cost ? 'disabled' : ''}>${maxed ? '✅ Макс' : `💰 ${formatNumber(cost)}`}</button>
-                    </div>`;
-                });
-                container.innerHTML = html;
-            } 
-            else if (tab === "buildings") {
-                let html = `<h2>🏗️ Здания</h2>`;
-                BUILDINGS.forEach(b => {
-                    const saved = gameState.buildings.find(x => x.id === b.id);
-                    const count = saved?.count || 0;
-                    const cost = Math.floor(b.baseCost * Math.pow(b.mult, count));
-                    const total = b.cps * count;
-                    html += `<div class="item">
-                        <div class="item-icon">${b.icon}</div>
-                        <div class="item-info">
-                            <div class="item-name">${b.name}</div>
-                            <div class="item-desc">+${formatNumber(b.cps)}/сек</div>
-                            ${count > 0 ? `<div class="item-level">Кол-во: ${count} (${formatNumber(total)}/сек)</div>` : ''}
-                        </div>
-                        <button class="buy-btn" onclick="buyBuilding('${b.id}')" ${gameState.coins < cost ? 'disabled' : ''}>💰 ${formatNumber(cost)}</button>
-                    </div>`;
-                });
-                container.innerHTML = html;
-            }
-            else if (tab === "prestige") {
-                const prestigeProgress = Math.min((gameState.coins / PRESTIGE_REQ) * 100, 100);
-                const megaProgress = Math.min((gameState.coins / MEGA_PRESTIGE_REQ) * 100, 100);
-                const hyperProgress = Math.min((gameState.coins / HYPER_PRESTIGE_REQ) * 100, 100);
-                container.innerHTML = `<h2>🌟 Система перерождений</h2>
-                    <div class="prestige-card"><div style="display:flex; justify-content:space-between"><span>⭐ Престиж: ${gameState.prestigeLevel} (+${getPrestigeBonus().toFixed(1)} к множителю)</span></div><div class="progress-bar"><div class="progress-fill" style="width:${prestigeProgress}%"></div></div><div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(PRESTIGE_REQ)}</div><button class="buy-btn" onclick="doPrestige()" ${gameState.coins < PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">✨ Обычный престиж (+0.5)</button></div>
-                    <div class="prestige-card"><div style="display:flex; justify-content:space-between"><span>🔥 Мега-престиж: ${gameState.megaPrestigeLevel} (+${getMegaBonus()} к множителю)</span></div><div class="progress-bar"><div class="progress-fill" style="width:${megaProgress}%"></div></div><div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(MEGA_PRESTIGE_REQ)} (1 млрд)</div><button class="buy-btn" onclick="doMegaPrestige()" ${gameState.coins < MEGA_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🔥 Мега-престиж (+2)</button></div>
-                    <div class="prestige-card"><div style="display:flex; justify-content:space-between"><span>🌈 Гипер-престиж: ${gameState.hyperPrestigeLevel} (+${getHyperBonus()} к множителю)</span></div><div class="progress-bar"><div class="progress-fill" style="width:${hyperProgress}%"></div></div><div style="font-size:11px">${formatNumber(gameState.coins)} / ${formatNumber(HYPER_PRESTIGE_REQ)} (1 трлн)</div><button class="buy-btn" onclick="doHyperPrestige()" ${gameState.coins < HYPER_PRESTIGE_REQ ? 'disabled' : ''} style="width:100%; margin-top:8px">🌈 Гипер-престиж (+5)</button></div>`;
-            }
-            else if (tab === "relics") {
-                let html = `<h2>💎 Реликвии</h2><div style="display:flex; flex-wrap:wrap"><div style="width:100%; margin-bottom:8px; text-align:center">✨ Бонус от реликвий: +${getRelicBonus().toFixed(1)} к множителю</div>`;
-                RELICS.forEach(r => {
-                    const owned = gameState.relics.find(x => x.id === r.id)?.owned;
-                    html += `<div class="relic-item">
-                        <div style="font-size:32px">${r.icon}</div>
-                        <div style="font-weight:700">${r.name}</div>
-                        <div style="font-size:10px; color:#92400e">+${r.bonus} к множителю</div>
-                        <button class="buy-btn" onclick="buyRelic('${r.id}')" ${owned || gameState.prestigePoints < r.cost ? 'disabled' : ''} style="margin-top:5px">${owned ? '✅ Получено' : `✨ ${r.cost} очков`}</button>
-                    </div>`;
-                });
-                html += `</div><div style="margin-top:12px; font-size:11px; color:#92400e">⭐ Реликвии покупаются за очки престижа и не сбрасываются</div>`;
-                container.innerHTML = html;
-            }
-            else if (tab === "quests") {
-                let html = `<h2>📜 Квесты ${gameState.globalQuestMultiplier > 1 ? `(✨ x${gameState.globalQuestMultiplier} ко всему!)` : ''}</h2>`;
-                QUESTS.forEach(qDef => {
-                    const q = gameState.quests.find(x => x.id === qDef.id);
-                    const completed = q?.completed;
-                    const claimed = q?.claimed;
-                    let rewardText = "";
-                    if (qDef.rewardType === "coins") rewardText = `${formatNumber(qDef.reward)} монет`;
-                    else if (qDef.rewardType === "prestige") rewardText = `${qDef.reward} очков престижа`;
-                    else rewardText = `x${qDef.reward} к множителю!`;
-                    html += `<div class="quest-item">
-                        <div style="display:flex; align-items:center; gap:8px">
-                            <span style="font-size:24px">${qDef.icon}</span>
-                            <div style="flex:1">
-                                <div style="font-weight:700">${qDef.name}</div>
-                                <div style="font-size:11px; color:#92400e">${qDef.desc}</div>
-                                <div style="font-size:10px; color:#6ee7b7">Награда: ${rewardText}</div>
-                            </div>
-                            <button class="buy-btn" onclick="claimQuest('${qDef.id}')" ${!completed || claimed ? 'disabled' : ''}>${claimed ? '✅ Забрано' : completed ? '🎁 Забрать' : '🔒 Закрыт'}</button>
-                        </div>
-                    </div>`;
-                });
-                container.innerHTML = html;
-            }
-            else if (tab === "bank") {
-                let activeHtml = '';
-                if (gameState.bankDeposits.length > 0) {
-                    activeHtml = `<h2 style="margin-top:12px">📊 Активные</h2>`;
-                    gameState.bankDeposits.forEach(dep => {
-                        const elapsed = (Date.now() - dep.startTime) / 60000;
-                        const progress = Math.min((elapsed / dep.duration) * 100, 100);
-                        activeHtml += `<div class="bank-deposit">
-                            <div>${dep.label} +${dep.interest}%</div>
-                            <div>Вложено: ${formatNumber(dep.amount)} → Получите: ${formatNumber(dep.amount * (1 + dep.interest/100))}</div>
-                            <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
-                        </div>`;
-                    });
-                }
-                container.innerHTML = `<h2>🏦 Банк</h2>
-                    <div class="bank-deposit">
-                        <div style="font-size:20px">💰 ${formatNumber(gameState.bankBalance)}</div>
-                        <div style="font-size:12px">Готово к снятию</div>
-                        <button class="buy-btn" onclick="withdrawBank()" ${gameState.bankBalance <= 0 ? 'disabled' : ''} style="margin-top:8px">💵 Снять всё</button>
+                        <button class="buy-btn" onclick="claimQuest('${qDef.id}')" ${!completed || claimed ? 'disabled' : ''}>${claimed ? '✅ Забрано' : completed ? '🎁 Забрать' : '🔒 Закрыт'}</button>
                     </div>
-                    <h2 style="margin-top:12px">📥 Вклады</h2>
-                    <div id="depositsList"></div>
-                    ${activeHtml}
-                    <div style="margin-top:12px; font-size:11px; color:#ffaa66">⚠️ При любом перерождении активные вклады пропадают!</div>`;
-                const depositsDiv = document.getElementById("depositsList");
-                if (depositsDiv) {
-                    depositsDiv.innerHTML = "";
-                    BANK_DEPOSITS.forEach((dep, i) => {
-                        depositsDiv.innerHTML += `<button class="buy-btn" onclick="depositPrompt(${i})" style="margin:4px">${dep.label} +${dep.interest}%</button>`;
-                    });
-                }
-            }
-            else if (tab === "events") {
-                let html = `<h2>🎉 Случайные события</h2>`;
-                if (gameState.activeEvent) {
-                    const ev = EVENTS.find(e => e.id === gameState.activeEvent);
-                    const remaining = Math.max(0, Math.floor((gameState.eventEndsAt - Date.now()) / 1000));
-                    html += `<div class="prestige-card" style="background:${ev?.color}22; border-color:${ev?.color}">
-                        <div style="font-size:32px">${ev?.icon}</div>
-                        <div style="font-weight:700">${ev?.name}</div>
-                        <div>${ev?.desc}</div>
-                        <div class="progress-bar"><div class="progress-fill" style="width:${(remaining/ev?.duration)*100}%; background:${ev?.color}"></div></div>
-                        <div>Осталось: ${remaining}с</div>
-                    </div>`;
-                } else {
-                    html += `<div style="color:#92400e">События появляются случайно во время игры.</div>`;
-                }
-                html += `<h2 style="margin-top:12px">📋 Список событий</h2>`;
-                EVENTS.forEach(ev => {
-                    html += `<div class="item" style="background:${ev.color}11; border-color:${ev.color}33">
-                        <div class="item-icon">${ev.icon}</div>
-                        <div class="item-info">
-                            <div class="item-name">${ev.name}</div>
-                            <div class="item-desc">${ev.desc}</div>
-                        </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+        else if (tab === "bank") {
+            let activeHtml = '';
+            if (gameState.bankDeposits.length > 0) {
+                activeHtml = `<h2 style="margin-top:12px">📊 Активные</h2>`;
+                gameState.bankDeposits.forEach(dep => {
+                    const elapsed = (Date.now() - dep.startTime) / 60000;
+                    const progress = Math.min((elapsed / dep.duration) * 100, 100);
+                    activeHtml += `<div class="bank-deposit">
+                        <div>${dep.label} +${dep.interest}%</div>
+                        <div>Вложено: ${formatNumber(dep.amount)} → Получите: ${formatNumber(dep.amount * (1 + dep.interest/100))}</div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
                     </div>`;
                 });
-                container.innerHTML = html;
             }
-            else if (tab === "leaderboard") {
-                await renderGlobalLeaderboard();
-            }
-            else if (tab === "stats") {
-                container.innerHTML = `<h2>📊 Статистика</h2>
-                    <div class="item"><div class="item-info"><div class="item-name">💰 Монет сейчас</div></div><div>${formatNumber(gameState.coins)}</div></div>
-                    <div class="item"><div class="item-info"><div class="item-name">📈 Всего заработано</div></div><div>${formatNumber(gameState.totalCoins)}</div></div>
-                    <div class="item"><div class="item-info"><div class="item-name">🖱️ Кликов</div></div><div>${formatNumber(gameState.totalClicks)}</div></div>
-                    <div class="item"><div class="item-info"><div class="item-name">👆 За клик</div></div><div>+${formatNumber(calcCPC())}</div></div>
-                    <div class="item"><div class="item-info"><div class="item-name">⚡ В секунду</div></div><div>+${formatNumber(calcCPS())}</div></div>
-                    <div class="item"><div class="item-info"><div class="item-name">⭐ Престиж</div></div><div>${gameState.prestigeLevel} (+${getPrestigeBonus().toFixed(1)})</div></div>
-                    <div class="item"><div class="item-info"><div class="item-name">🔥 Мега-престиж</div></div><div>${gameState.megaPrestigeLevel} (+${getMegaBonus()})</div></div>
-                    <div class="item"><div class="item-info"><div class="item-name">🌈 Гипер-престиж</div></div><div>${gameState.hyperPrestigeLevel} (+${getHyperBonus()})</div></div>
-                    <div class="item"><div class="item-info"><div class="item-name">💎 Реликвии</div></div><div>+${getRelicBonus().toFixed(1)}</div></div>
-                    <div class="item"><div class="item-info"><div class="item-name">📊 Общий множитель</div></div><div>x${(getTotalMultiplier() * gameState.globalQuestMultiplier).toFixed(2)}</div></div>
-                    <div class="item"><div class="item-info"><div class="item-name">✨ Очки престижа</div></div><div>${gameState.prestigePoints}</div></div>
-                    <div class="item"><div class="item-info"><div class="item-name">🎖️ Всего очков</div></div><div>${gameState.totalPrestigePoints}</div></div>
-                    <div class="item"><div class="item-info"><div class="item-name">✨ Квест-множитель</div></div><div>x${gameState.globalQuestMultiplier}</div></div>
-                    <button onclick="sendRecord()" style="background:#b45309; border:none; border-radius:10px; padding:10px; margin-top:10px; width:100%; color:white; font-weight:bold; cursor:pointer">🌍 Отправить рекорд в глобальный топ</button>`;
-            }
-        }
-
-        window.showNicknameModal = function() {
-            const modal = document.createElement('div');
-            modal.className = 'name-input-modal';
-            modal.innerHTML = `<div class="name-input-card">
-                <h3 style="color:#fbbf24">👤 Введите ник</h3>
-                <input type="text" id="nicknameInput" maxlength="20" placeholder="Твой ник..." value="${gameState.nickname}">
-                <div>
-                    <button id="saveNicknameBtn">Сохранить</button>
-                    <button id="cancelNicknameBtn">Отмена</button>
+            container.innerHTML = `<h2>🏦 Банк</h2>
+                <div class="bank-deposit">
+                    <div style="font-size:20px">💰 ${formatNumber(gameState.bankBalance)}</div>
+                    <div style="font-size:12px">Готово к снятию</div>
+                    <button class="buy-btn" onclick="withdrawBank()" ${gameState.bankBalance <= 0 ? 'disabled' : ''} style="margin-top:8px">💵 Снять всё</button>
                 </div>
-            </div>`;
-            document.body.appendChild(modal);
-            document.getElementById('saveNicknameBtn').onclick = () => {
-                const input = document.getElementById('nicknameInput');
-                if (input.value.trim()) setNickname(input.value);
-                modal.remove();
-                updateUI();
-            };
-            document.getElementById('cancelNicknameBtn').onclick = () => modal.remove();
-        };
-
-        function saveToCloud() {
-            if (!tg) return;
-            const saveData = {
-                coins: gameState.coins, totalCoins: gameState.totalCoins, totalClicks: gameState.totalClicks,
-                prestigeLevel: gameState.prestigeLevel, megaPrestigeLevel: gameState.megaPrestigeLevel,
-                hyperPrestigeLevel: gameState.hyperPrestigeLevel, prestigePoints: gameState.prestigePoints,
-                totalPrestigePoints: gameState.totalPrestigePoints, nickname: gameState.nickname,
-                upgrades: gameState.upgrades, buildings: gameState.buildings, relics: gameState.relics,
-                quests: gameState.quests, bankBalance: gameState.bankBalance, bankDeposits: gameState.bankDeposits,
-                globalQuestMultiplier: gameState.globalQuestMultiplier
-            };
-            tg.CloudStorage.setItem(CLOUD_SAVE_KEY, JSON.stringify(saveData), (err) => {});
+                <h2 style="margin-top:12px">📥 Вклады</h2>
+                <div id="depositsList"></div>
+                ${activeHtml}
+                <div style="margin-top:12px; font-size:11px; color:#ffaa66">⚠️ При любом перерождении активные вклады пропадают!</div>`;
+            const depositsDiv = document.getElementById("depositsList");
+            if (depositsDiv) {
+                depositsDiv.innerHTML = "";
+                BANK_DEPOSITS.forEach((dep, i) => {
+                    depositsDiv.innerHTML += `<button class="buy-btn" onclick="depositPrompt(${i})" style="margin:4px">${dep.label} +${dep.interest}%</button>`;
+                });
+            }
         }
+        else if (tab === "events") {
+            let html = `<h2>🎉 Случайные события</h2>`;
+            if (gameState.activeEvent) {
+                const ev = EVENTS.find(e => e.id === gameState.activeEvent);
+                const remaining = Math.max(0, Math.floor((gameState.eventEndsAt - Date.now()) / 1000));
+                html += `<div class="prestige-card" style="background:${ev?.color}22; border-color:${ev?.color}">
+                    <div style="font-size:32px">${ev?.icon}</div>
+                    <div style="font-weight:700">${ev?.name}</div>
+                    <div>${ev?.desc}</div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:${(remaining/ev?.duration)*100}%; background:${ev?.color}"></div></div>
+                    <div>Осталось: ${remaining}с</div>
+                </div>`;
+            } else {
+                html += `<div style="color:#92400e">События появляются случайно во время игры.</div>`;
+            }
+            html += `<h2 style="margin-top:12px">📋 Список событий</h2>`;
+            EVENTS.forEach(ev => {
+                html += `<div class="item" style="background:${ev.color}11; border-color:${ev.color}33">
+                    <div class="item-icon">${ev.icon}</div>
+                    <div class="item-info">
+                        <div class="item-name">${ev.name}</div>
+                        <div class="item-desc">${ev.desc}</div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+        else if (tab === "leaderboard") {
+            await renderGlobalLeaderboard();
+        }
+        else if (tab === "stats") {
+            container.innerHTML = `<h2>📊 Статистика</h2>
+                <div class="item"><div class="item-info"><div class="item-name">💰 Монет сейчас</div></div><div>${formatNumber(gameState.coins)}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">📈 Всего заработано</div></div><div>${formatNumber(gameState.totalCoins)}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">🖱️ Кликов</div></div><div>${formatNumber(gameState.totalClicks)}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">👆 За клик</div></div><div>+${formatNumber(calcCPC())}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">⚡ В секунду</div></div><div>+${formatNumber(calcCPS())}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">⭐ Престиж</div></div><div>${gameState.prestigeLevel} (+${getPrestigeBonus().toFixed(1)})</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">🔥 Мега-престиж</div></div><div>${gameState.megaPrestigeLevel} (+${getMegaBonus()})</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">🌈 Гипер-престиж</div></div><div>${gameState.hyperPrestigeLevel} (+${getHyperBonus()})</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">💎 Реликвии</div></div><div>+${getRelicBonus().toFixed(1)}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">📊 Общий множитель</div></div><div>x${(getTotalMultiplier() * gameState.globalQuestMultiplier).toFixed(2)}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">✨ Очки престижа</div></div><div>${gameState.prestigePoints}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">🎖️ Всего очков</div></div><div>${gameState.totalPrestigePoints}</div></div>
+                <div class="item"><div class="item-info"><div class="item-name">✨ Квест-множитель</div></div><div>x${gameState.globalQuestMultiplier}</div></div>
+                <button onclick="sendRecord()" style="background:#b45309; border:none; border-radius:10px; padding:10px; margin-top:10px; width:100%; color:white; font-weight:bold; cursor:pointer">🌍 Отправить рекорд в глобальный топ</button>`;
+        }
+    }
 
-        function loadFromCloud() {
-            if (!tg) {
+    window.showNicknameModal = function() {
+        const modal = document.createElement('div');
+        modal.className = 'name-input-modal';
+        modal.innerHTML = `<div class="name-input-card">
+            <h3 style="color:#fbbf24">👤 Введите ник</h3>
+            <input type="text" id="nicknameInput" maxlength="20" placeholder="Твой ник..." value="${gameState.nickname}">
+            <div>
+                <button id="saveNicknameBtn">Сохранить</button>
+                <button id="cancelNicknameBtn">Отмена</button>
+            </div>
+        </div>`;
+        document.body.appendChild(modal);
+        document.getElementById('saveNicknameBtn').onclick = () => {
+            const input = document.getElementById('nicknameInput');
+            if (input.value.trim()) setNickname(input.value);
+            modal.remove();
+            updateUI();
+        };
+        document.getElementById('cancelNicknameBtn').onclick = () => modal.remove();
+    };
+
+    function saveToCloud() {
+        if (!tg) return;
+        const saveData = {
+            coins: gameState.coins, totalCoins: gameState.totalCoins, totalClicks: gameState.totalClicks,
+            prestigeLevel: gameState.prestigeLevel, megaPrestigeLevel: gameState.megaPrestigeLevel,
+            hyperPrestigeLevel: gameState.hyperPrestigeLevel, prestigePoints: gameState.prestigePoints,
+            totalPrestigePoints: gameState.totalPrestigePoints, nickname: gameState.nickname,
+            upgrades: gameState.upgrades, buildings: gameState.buildings, relics: gameState.relics,
+            quests: gameState.quests, bankBalance: gameState.bankBalance, bankDeposits: gameState.bankDeposits,
+            globalQuestMultiplier: gameState.globalQuestMultiplier
+        };
+        tg.CloudStorage.setItem(CLOUD_SAVE_KEY, JSON.stringify(saveData), (err) => {});
+    }
+
+    function loadFromCloud() {
+        if (!tg) {
+            if (!gameState.nickname || gameState.nickname === "") {
+                gameState.nickname = generateRandomNickname();
+            }
+            return;
+        }
+        tg.CloudStorage.getItem(CLOUD_SAVE_KEY, (err, data) => {
+            if (err || !data) {
                 if (!gameState.nickname || gameState.nickname === "") {
                     gameState.nickname = generateRandomNickname();
+                    updateUI();
                 }
                 return;
             }
-            tg.CloudStorage.getItem(CLOUD_SAVE_KEY, (err, data) => {
-                if (err || !data) {
-                    if (!gameState.nickname || gameState.nickname === "") {
-                        gameState.nickname = generateRandomNickname();
-                        updateUI();
-                    }
-                    return;
-                }
-                try {
-                    const cloudData = JSON.parse(data);
-                    gameState.coins = cloudData.coins || 0;
-                    gameState.totalCoins = cloudData.totalCoins || 0;
-                    gameState.totalClicks = cloudData.totalClicks || 0;
-                    gameState.prestigeLevel = cloudData.prestigeLevel || 0;
-                    gameState.megaPrestigeLevel = cloudData.megaPrestigeLevel || 0;
-                    gameState.hyperPrestigeLevel = cloudData.hyperPrestigeLevel || 0;
-                    gameState.prestigePoints = cloudData.prestigePoints || 0;
-                    gameState.totalPrestigePoints = cloudData.totalPrestigePoints || 0;
-                    gameState.nickname = cloudData.nickname || "";
-                    gameState.bankBalance = cloudData.bankBalance || 0;
-                    gameState.bankDeposits = cloudData.bankDeposits || [];
-                    gameState.globalQuestMultiplier = cloudData.globalQuestMultiplier || 1;
-                    if (cloudData.upgrades) gameState.upgrades = UPGRADES.map(u => cloudData.upgrades?.find(x => x.id === u.id) || { id: u.id, level: 0 });
-                    if (cloudData.buildings) gameState.buildings = BUILDINGS.map(b => cloudData.buildings?.find(x => x.id === b.id) || { id: b.id, count: 0 });
-                    if (cloudData.relics) gameState.relics = RELICS.map(r => cloudData.relics?.find(x => x.id === r.id) || { id: r.id, owned: false });
-                    if (cloudData.quests) gameState.quests = QUESTS.map(q => cloudData.quests?.find(x => x.id === q.id) || { id: q.id, completed: false, claimed: false });
-                    if (!gameState.nickname || gameState.nickname === "") gameState.nickname = generateRandomNickname();
-                    updateUI();
-                    checkQuests();
-                } catch(e) {}
-            });
-        }
+            try {
+                const cloudData = JSON.parse(data);
+                gameState.coins = cloudData.coins || 0;
+                gameState.totalCoins = cloudData.totalCoins || 0;
+                gameState.totalClicks = cloudData.totalClicks || 0;
+                gameState.prestigeLevel = cloudData.prestigeLevel || 0;
+                gameState.megaPrestigeLevel = cloudData.megaPrestigeLevel || 0;
+                gameState.hyperPrestigeLevel = cloudData.hyperPrestigeLevel || 0;
+                gameState.prestigePoints = cloudData.prestigePoints || 0;
+                gameState.totalPrestigePoints = cloudData.totalPrestigePoints || 0;
+                gameState.nickname = cloudData.nickname || "";
+                gameState.bankBalance = cloudData.bankBalance || 0;
+                gameState.bankDeposits = cloudData.bankDeposits || [];
+                gameState.globalQuestMultiplier = cloudData.globalQuestMultiplier || 1;
+                if (cloudData.upgrades) gameState.upgrades = UPGRADES.map(u => cloudData.upgrades?.find(x => x.id === u.id) || { id: u.id, level: 0 });
+                if (cloudData.buildings) gameState.buildings = BUILDINGS.map(b => cloudData.buildings?.find(x => x.id === b.id) || { id: b.id, count: 0 });
+                if (cloudData.relics) gameState.relics = RELICS.map(r => cloudData.relics?.find(x => x.id === r.id) || { id: r.id, owned: false });
+                if (cloudData.quests) gameState.quests = QUESTS.map(q => cloudData.quests?.find(x => x.id === q.id) || { id: q.id, completed: false, claimed: false });
+                if (!gameState.nickname || gameState.nickname === "") gameState.nickname = generateRandomNickname();
+                updateUI();
+                checkQuests();
+            } catch(e) {}
+        });
+    }
 
-        function autoSaveToCloud() {
-            if (saveTimeout) clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(() => {
-                saveToCloud();
-                localStorage.setItem("coinclicker_backup", JSON.stringify({
-                    coins: gameState.coins, totalCoins: gameState.totalCoins, totalClicks: gameState.totalClicks,
-                    prestigeLevel: gameState.prestigeLevel, megaPrestigeLevel: gameState.megaPrestigeLevel,
-                    hyperPrestigeLevel: gameState.hyperPrestigeLevel, prestigePoints: gameState.prestigePoints,
-                    totalPrestigePoints: gameState.totalPrestigePoints, nickname: gameState.nickname,
-                    upgrades: gameState.upgrades, buildings: gameState.buildings, relics: gameState.relics,
-                    quests: gameState.quests, bankBalance: gameState.bankBalance, bankDeposits: gameState.bankDeposits,
-                    globalQuestMultiplier: gameState.globalQuestMultiplier
-                }));
-            }, 1000);
-        }
-
-        window.addEventListener("beforeunload", function() {
+    function autoSaveToCloud() {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
             saveToCloud();
             localStorage.setItem("coinclicker_backup", JSON.stringify({
                 coins: gameState.coins, totalCoins: gameState.totalCoins, totalClicks: gameState.totalClicks,
@@ -863,64 +852,77 @@
                 quests: gameState.quests, bankBalance: gameState.bankBalance, bankDeposits: gameState.bankDeposits,
                 globalQuestMultiplier: gameState.globalQuestMultiplier
             }));
-        });
+        }, 1000);
+    }
 
-        function init() {
-            if (tg) loadFromCloud();
-            else {
-                const saved = localStorage.getItem("coinclicker_backup");
-                if (saved) {
-                    try {
-                        const data = JSON.parse(saved);
-                        gameState.coins = data.coins || 0;
-                        gameState.totalCoins = data.totalCoins || 0;
-                        gameState.totalClicks = data.totalClicks || 0;
-                        gameState.prestigeLevel = data.prestigeLevel || 0;
-                        gameState.megaPrestigeLevel = data.megaPrestigeLevel || 0;
-                        gameState.hyperPrestigeLevel = data.hyperPrestigeLevel || 0;
-                        gameState.prestigePoints = data.prestigePoints || 0;
-                        gameState.totalPrestigePoints = data.totalPrestigePoints || 0;
-                        gameState.nickname = data.nickname || "";
-                        gameState.bankBalance = data.bankBalance || 0;
-                        gameState.bankDeposits = data.bankDeposits || [];
-                        gameState.globalQuestMultiplier = data.globalQuestMultiplier || 1;
-                        if (data.upgrades) gameState.upgrades = UPGRADES.map(u => data.upgrades?.find(x => x.id === u.id) || { id: u.id, level: 0 });
-                        if (data.buildings) gameState.buildings = BUILDINGS.map(b => data.buildings?.find(x => x.id === b.id) || { id: b.id, count: 0 });
-                        if (data.relics) gameState.relics = RELICS.map(r => data.relics?.find(x => x.id === r.id) || { id: r.id, owned: false });
-                        if (data.quests) gameState.quests = QUESTS.map(q => data.quests?.find(x => x.id === q.id) || { id: q.id, completed: false, claimed: false });
-                    } catch(e) {}
-                }
-                if (!gameState.nickname || gameState.nickname === "") gameState.nickname = generateRandomNickname();
+    window.addEventListener("beforeunload", function() {
+        saveToCloud();
+        localStorage.setItem("coinclicker_backup", JSON.stringify({
+            coins: gameState.coins, totalCoins: gameState.totalCoins, totalClicks: gameState.totalClicks,
+            prestigeLevel: gameState.prestigeLevel, megaPrestigeLevel: gameState.megaPrestigeLevel,
+            hyperPrestigeLevel: gameState.hyperPrestigeLevel, prestigePoints: gameState.prestigePoints,
+            totalPrestigePoints: gameState.totalPrestigePoints, nickname: gameState.nickname,
+            upgrades: gameState.upgrades, buildings: gameState.buildings, relics: gameState.relics,
+            quests: gameState.quests, bankBalance: gameState.bankBalance, bankDeposits: gameState.bankDeposits,
+            globalQuestMultiplier: gameState.globalQuestMultiplier
+        }));
+    });
+
+    function init() {
+        if (tg) loadFromCloud();
+        else {
+            const saved = localStorage.getItem("coinclicker_backup");
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    gameState.coins = data.coins || 0;
+                    gameState.totalCoins = data.totalCoins || 0;
+                    gameState.totalClicks = data.totalClicks || 0;
+                    gameState.prestigeLevel = data.prestigeLevel || 0;
+                    gameState.megaPrestigeLevel = data.megaPrestigeLevel || 0;
+                    gameState.hyperPrestigeLevel = data.hyperPrestigeLevel || 0;
+                    gameState.prestigePoints = data.prestigePoints || 0;
+                    gameState.totalPrestigePoints = data.totalPrestigePoints || 0;
+                    gameState.nickname = data.nickname || "";
+                    gameState.bankBalance = data.bankBalance || 0;
+                    gameState.bankDeposits = data.bankDeposits || [];
+                    gameState.globalQuestMultiplier = data.globalQuestMultiplier || 1;
+                    if (data.upgrades) gameState.upgrades = UPGRADES.map(u => data.upgrades?.find(x => x.id === u.id) || { id: u.id, level: 0 });
+                    if (data.buildings) gameState.buildings = BUILDINGS.map(b => data.buildings?.find(x => x.id === b.id) || { id: b.id, count: 0 });
+                    if (data.relics) gameState.relics = RELICS.map(r => data.relics?.find(x => x.id === r.id) || { id: r.id, owned: false });
+                    if (data.quests) gameState.quests = QUESTS.map(q => data.quests?.find(x => x.id === q.id) || { id: q.id, completed: false, claimed: false });
+                } catch(e) {}
             }
-            updateUI();
-
-            document.querySelectorAll(".tab-btn").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    const tabId = btn.getAttribute("data-tab");
-                    if (!tabId) return;
-                    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-                    btn.classList.add("active");
-                    renderTab(tabId);
-                });
-            });
-            document.querySelector(".tab-btn").classList.add("active");
-            document.getElementById("coinBtn").addEventListener("click", window.clickCoin);
-            document.getElementById("nicknameBtn").addEventListener("click", window.showNicknameModal);
-
-            setInterval(() => { checkBankMaturity(); updateUI(); }, 1000);
-            setInterval(() => { checkEvent(); updateUI(); }, 500);
-            setInterval(() => { checkQuests(); }, 500);
-            setInterval(() => {
-                if (gameState.totalCoins > 0 || gameState.totalClicks > 0) {
-                    saveToCloud();
-                }
-            }, 10000);
-            lastTick = Date.now();
-            requestAnimationFrame(passiveIncome);
+            if (!gameState.nickname || gameState.nickname === "") gameState.nickname = generateRandomNickname();
         }
+        updateUI();
 
-        init();
-    })();
+        document.querySelectorAll(".tab-btn").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                const tabId = btn.getAttribute("data-tab");
+                if (!tabId) return;
+                document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                await renderTab(tabId);
+            });
+        });
+        document.querySelector(".tab-btn").classList.add("active");
+        document.getElementById("coinBtn").addEventListener("click", window.clickCoin);
+        document.getElementById("nicknameBtn").addEventListener("click", window.showNicknameModal);
+
+        setInterval(() => { checkBankMaturity(); updateUI(); }, 1000);
+        setInterval(() => { checkEvent(); updateUI(); }, 500);
+        setInterval(() => { checkQuests(); }, 500);
+        setInterval(() => {
+            if (gameState.totalCoins > 0 || gameState.totalClicks > 0) {
+                saveToCloud();
+            }
+        }, 10000);
+        lastTick = Date.now();
+        requestAnimationFrame(passiveIncome);
+    }
+
+    init();
 </script>
 </body>
 </html>
