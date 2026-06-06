@@ -23,6 +23,8 @@ jobs:
           python-version: '3.11'
 
       - name: Run leaderboard update script
+        env:
+          TOKEN_FOR_ACTIONS: ${{ secrets.TOKEN_FOR_ACTIONS }}
         run: python .github/scripts/update_leaderboard.py
 
       - name: Commit and push changes
