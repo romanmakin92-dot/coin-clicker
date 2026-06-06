@@ -1,22 +1,99 @@
 import json
-import random
-from datetime import datetime
+import requests
+import re
+import os
 
-LEADERBOARD_FILE = "leaderboard.json"
+REPO = "romanmakin92-dot/coin-clicker"
+GITHUB_TOKEN = os.environ.get("TOKEN_FOR_ACTIONS")
+
+def get_issues():
+    url = f"https://api.github.com/repos/{REPO}/issues"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/json"}
+    params = {"state": "all", "per_page": 100}
+    
+    all_issues = []
+    page = 1
+    while True:
+        params["page"] = page
+        response = requests.get(url, headers=headers, params=params)
+        issues = response.json()
+        if not issues:
+            break
+        all_issues.extend(issues)
+        page += 1
+        if len(issues) < 100:
+            break
+    
+    return all_issues
+
+def parse_value(body, pattern):
+    match = re.search(pattern, body)
+    if not match:
+        return 0
+    val_str = match.group(1)
+    multiplier = 1
+    if 'К' in val_str:
+        multiplier = 1000
+        val_str = val_str.replace('К', '').strip()
+    elif 'М' in val_str:
+        multiplier = 1000000
+        val_str = val_str.replace('М', '').strip()
+    elif 'Т' in val_str:
+        multiplier = 1000000000000
+        val_str = val_str.replace('Т', '').strip()
+    try:
+        return int(float(val_str) * multiplier)
+    except:
+        return 0
+
+def extract_name(body):
+    match = re.search(r'👤 Игрок: (.+?)(?:\n|$)', body)
+    if match:
+        return match.group(1).strip()
+    return "Аноним"
 
 def update_leaderboard():
-    new_scores = [
-        {"name": "Игрок1", "score": random.randint(1000, 100000), "date": str(datetime.now())},
-        {"name": "Игрок2", "score": random.randint(1000, 100000), "date": str(datetime.now())},
-        {"name": "Игрок3", "score": random.randint(1000, 100000), "date": str(datetime.now())},
-    ]
+    issues = get_issues()
+    players_data = {}
     
-    new_scores.sort(key=lambda x: x["score"], reverse=True)
+    for issue in issues:
+        body = issue.get("body", "")
+        name = extract_name(body)
+        if not name:
+            continue
+        
+        coins = parse_value(body, r'💰 Монет: ([\d\.]+[КМТ]?)')
+        prestige = parse_value(body, r'⭐ Престиж: (\d+)')
+        mega = parse_value(body, r'🔥 Мега: (\d+)')
+        hyper = parse_value(body, r'🌈 Гипер: (\d+)')
+        
+        if name not in players_data:
+            players_data[name] = {"coins": 0, "prestige": 0, "mega": 0, "hyper": 0}
+        
+        if coins > players_data[name]["coins"]:
+            players_data[name]["coins"] = coins
+        if prestige > players_data[name]["prestige"]:
+            players_data[name]["prestige"] = prestige
+        if mega > players_data[name]["mega"]:
+            players_data[name]["mega"] = mega
+        if hyper > players_data[name]["hyper"]:
+            players_data[name]["hyper"] = hyper
     
-    with open(LEADERBOARD_FILE, "w", encoding="utf-8") as f:
-        json.dump(new_scores, f, ensure_ascii=False, indent=2)
+    leaderboard = {
+        "coins": [{"name": k, "value": v["coins"]} for k, v in players_data.items() if v["coins"] > 0],
+        "prestige": [{"name": k, "value": v["prestige"]} for k, v in players_data.items() if v["prestige"] > 0],
+        "mega": [{"name": k, "value": v["mega"]} for k, v in players_data.items() if v["mega"] > 0],
+        "hyper": [{"name": k, "value": v["hyper"]} for k, v in players_data.items() if v["hyper"] > 0]
+    }
     
-    print(f"✅ Топ обновлён: {len(new_scores)} записей")
+    for key in leaderboard:
+        leaderboard[key].sort(key=lambda x: x["value"], reverse=True)
+        leaderboard[key] = leaderboard[key][:50]
+    
+    with open("leaderboard.json", "w", encoding="utf-8") as f:
+        json.dump(leaderboard, f, ensure_ascii=False, indent=2)
+    
+    print(f"✅ Топ обновлён: {len(players_data)} игроков")
 
 if __name__ == "__main__":
     update_leaderboard()
