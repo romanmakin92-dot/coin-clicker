@@ -18,7 +18,7 @@
         .coin-btn { width: 180px; height: 180px; margin: 20px auto; background: radial-gradient(circle at 35% 35%, #fbbf24aa, #f59e0b33); border: 3px solid #fbbf2488; border-radius: 50%; font-size: 70px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s; box-shadow: 0 0 40px rgba(251,191,36,0.3); }
         .coin-btn:active { transform: scale(0.93); }
         .tabs { display: flex; gap: 4px; background: rgba(120,53,15,0.2); border-radius: 14px; padding: 4px; overflow-x: auto; margin-bottom: 12px; flex-wrap: wrap; }
-        .tab-btn { padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: bold; background: transparent; border: none; color: #a16207; cursor: pointer; transition: all 0.2s; }
+        .tab-btn { padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: bold; background: transparent; border: none; color: #a16207; cursor: pointer; }
         .tab-btn.active { background: #b45309; color: white; }
         .tab-content { background: rgba(120,53,15,0.15); border: 1px solid rgba(120,53,15,0.3); border-radius: 20px; padding: 16px; max-height: 450px; overflow-y: auto; }
         .item { display: flex; align-items: center; gap: 12px; background: rgba(120,53,15,0.2); border: 1px solid rgba(120,53,15,0.3); border-radius: 14px; padding: 10px; margin-bottom: 8px; }
@@ -41,14 +41,14 @@
         .leaderboard-rank { font-size: 20px; min-width: 40px; text-align: center; }
         .leaderboard-name { flex: 1; font-weight: bold; }
         .leaderboard-value { color: #fbbf24; font-weight: bold; }
+        .leaderboard-select { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .leaderboard-select-btn { background: rgba(120,53,15,0.4); border: none; border-radius: 8px; padding: 6px 12px; color: #a16207; cursor: pointer; }
+        .leaderboard-select-btn.active { background: #b45309; color: white; }
         .name-input-modal { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; }
         .name-input-card { background: #1a0800; border: 1px solid #fbbf24; border-radius: 20px; padding: 24px; width: 300px; text-align: center; }
         .name-input-card input { width: 100%; background: #0a0500; border: 1px solid #b45309; border-radius: 10px; padding: 10px; color: white; margin: 12px 0; font-size: 16px; }
         .name-input-card button { background: #b45309; border: none; border-radius: 10px; padding: 10px; color: white; font-weight: bold; margin: 5px; cursor: pointer; width: 100px; }
         .nickname-btn { background: rgba(251,191,36,0.2); border: 1px solid rgba(251,191,36,0.3); border-radius: 20px; padding: 4px 12px; font-size: 11px; cursor: pointer; display: inline-block; margin-top: 8px; }
-        .leaderboard-select { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-        .leaderboard-select-btn { background: rgba(120,53,15,0.4); border: none; border-radius: 8px; padding: 6px 12px; color: #a16207; font-size: 12px; cursor: pointer; }
-        .leaderboard-select-btn.active { background: #b45309; color: white; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes coinPop { 0% { opacity: 1; transform: scale(1.4); } 100% { opacity: 0; transform: scale(0.7); } }
         .particle { position: fixed; pointer-events: none; color: #fbbf24; font-weight: bold; font-size: 20px; z-index: 1000; animation: coinPop 0.5s ease-out forwards; }
@@ -87,11 +87,10 @@
 </div>
 
 <script>
-    // Telegram Web App
     const tg = window.Telegram?.WebApp;
     if (tg) { tg.expand(); tg.ready(); }
 
-    // === ТОКЕН ДЛЯ ОТПРАВКИ РЕКОРДОВ ===
+    // === ТОКЕН (ЗАМЕНИ НА СВОЙ) ===
     const GITHUB_TOKEN = "ghp_UDbXwD6TB7EiZ07Sbe1kbfwcOu0hBz0exbLo";
 
     // ---------- ДАННЫЕ ----------
@@ -211,10 +210,11 @@
 
     let saveTimeout = null;
     let currentTab = "upgrades";
+    let currentLeaderboardType = "coins";
 
     function generateRandomNickname() {
-        const adjectives = ["Крутой", "Сильный", "Быстрый", "Храбрый", "Весёлый", "Умный", "Ловкий", "Могучий", "Смелый", "Добрый"];
-        const nouns = ["Игрок", "Герой", "Воин", "Маг", "Кликер", "Боец", "Чемпион", "Легенда", "Мастер", "Король"];
+        const adjectives = ["Крутой", "Сильный", "Быстрый", "Храбрый", "Весёлый", "Умный", "Ловкий", "Могучий"];
+        const nouns = ["Игрок", "Герой", "Воин", "Маг", "Кликер", "Боец", "Чемпион", "Легенда"];
         const num = Math.floor(Math.random() * 1000);
         return `${adjectives[Math.floor(Math.random() * adjectives.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}${num}`;
     }
@@ -226,15 +226,21 @@
         if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
     }
 
-    // === ОТПРАВКА РЕКОРДА В ГЛОБАЛЬНЫЙ ТОП ===
+    // === ОТПРАВКА РЕКОРДА ===
     window.sendRecord = async function() {
         const name = gameState.nickname || "Аноним";
-        const score = gameState.totalCoins;
+        const coins = Math.floor(gameState.totalCoins);
+        const prestige = gameState.prestigeLevel;
+        const mega = gameState.megaPrestigeLevel;
+        const hyper = gameState.hyperPrestigeLevel;
         
-        if (score < 1000) {
-            alert("Набери хотя бы 1000 монет для отправки рекорда!");
+        if (coins < 100) {
+            alert("Набери хотя бы 100 монет для отправки рекорда!");
             return;
         }
+        
+        const title = `Рекорд от ${name}`;
+        const body = `👤 Игрок: ${name}\n💰 Монет: ${coins}\n⭐ Престиж: ${prestige}\n🔥 Мега: ${mega}\n🌈 Гипер: ${hyper}`;
         
         try {
             const response = await fetch('https://api.github.com/repos/romanmakin92-dot/coin-clicker/issues', {
@@ -244,16 +250,15 @@
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    title: `Рекорд от ${name}`,
-                    body: `👤 Игрок: ${name}\n💰 Монет: ${Math.floor(score)}\n⭐ Престиж: ${gameState.prestigeLevel}\n🔥 Мега: ${gameState.megaPrestigeLevel}\n🌈 Гипер: ${gameState.hyperPrestigeLevel}`
-                })
+                body: JSON.stringify({ title: title, body: body })
             });
             
             if (response.ok) {
-                alert("✅ Рекорд отправлен! Через 30 минут появится в глобальном топе.");
+                alert("✅ Рекорд отправлен! Через 30 минут появится в топе.");
             } else {
-                alert("❌ Ошибка отправки. Попробуй ещё раз.");
+                const error = await response.text();
+                console.error(error);
+                alert("❌ Ошибка отправки. Проверь токен.");
             }
         } catch(e) {
             alert("❌ Ошибка соединения");
@@ -306,42 +311,63 @@
         setTimeout(() => particle.remove(), 500);
     }
 
-    // Глобальный топ: загрузка и отображение
-    async function loadGlobalLeaderboard() {
+    // === ГЛОБАЛЬНЫЙ ТОП ===
+    async function loadLeaderboard() {
         try {
-            const response = await fetch('leaderboard.json');
-            const players = await response.json();
-            return players;
+            const response = await fetch('leaderboard.json?t=' + Date.now());
+            const data = await response.json();
+            return data;
         } catch(e) {
             console.error("Ошибка загрузки топа:", e);
-            return [];
+            return { coins: [], prestige: [], mega: [], hyper: [] };
         }
     }
 
-    async function renderGlobalLeaderboard() {
+    async function renderLeaderboard() {
         const container = document.getElementById("tabContent");
         if (!container) return;
         
-        const players = await loadGlobalLeaderboard();
+        const data = await loadLeaderboard();
+        const players = data[currentLeaderboardType] || [];
         
-        let html = `<h2>🏆 Глобальный топ (обновляется раз в 30 минут)</h2>`;
+        const titles = {
+            coins: "💰 Топ по монетам",
+            prestige: "⭐ Топ по престижам",
+            mega: "🔥 Топ по мега-престижам",
+            hyper: "🌈 Топ по гипер-престижам"
+        };
+        
+        let html = `<div class="leaderboard-select">
+            <button class="leaderboard-select-btn ${currentLeaderboardType === 'coins' ? 'active' : ''}" data-type="coins">💰 Монеты</button>
+            <button class="leaderboard-select-btn ${currentLeaderboardType === 'prestige' ? 'active' : ''}" data-type="prestige">⭐ Престижи</button>
+            <button class="leaderboard-select-btn ${currentLeaderboardType === 'mega' ? 'active' : ''}" data-type="mega">🔥 Мега</button>
+            <button class="leaderboard-select-btn ${currentLeaderboardType === 'hyper' ? 'active' : ''}" data-type="hyper">🌈 Гипер</button>
+        </div>
+        <h2>${titles[currentLeaderboardType]}</h2>`;
         
         if (!players.length) {
-            html += `<div style="color:#92400e; text-align:center; padding:20px">Пока никого нет. Будь первым!</div>`;
+            html += `<div style="color:#92400e; text-align:center; padding:20px">Пока никого нет. Отправь свой рекорд!</div>`;
         } else {
             players.slice(0, 20).forEach((player, i) => {
                 const medals = ["🥇", "🥈", "🥉"];
                 const rank = i < 3 ? medals[i] : `#${i+1}`;
                 const isMe = player.name === gameState.nickname;
                 html += `<div class="leaderboard-entry" style="${isMe ? 'border:1px solid #fbbf24' : ''}">
-                            <div class="leaderboard-rank">${rank}</div>
-                            <div class="leaderboard-name">${player.name}${isMe ? ' 👈' : ''}</div>
-                            <div class="leaderboard-value">💰 ${formatNumber(player.score)}</div>
-                        </div>`;
+                    <div class="leaderboard-rank">${rank}</div>
+                    <div class="leaderboard-name">${player.name}${isMe ? ' 👈' : ''}</div>
+                    <div class="leaderboard-value">${formatNumber(player.value)}</div>
+                </div>`;
             });
         }
         
         container.innerHTML = html;
+        
+        document.querySelectorAll(".leaderboard-select-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                currentLeaderboardType = btn.getAttribute("data-type");
+                renderLeaderboard();
+            });
+        });
     }
 
     // Игровые действия
@@ -743,7 +769,7 @@
             container.innerHTML = html;
         }
         else if (tab === "leaderboard") {
-            await renderGlobalLeaderboard();
+            await renderLeaderboard();
         }
         else if (tab === "stats") {
             container.innerHTML = `<h2>📊 Статистика</h2>
@@ -857,15 +883,6 @@
 
     window.addEventListener("beforeunload", function() {
         saveToCloud();
-        localStorage.setItem("coinclicker_backup", JSON.stringify({
-            coins: gameState.coins, totalCoins: gameState.totalCoins, totalClicks: gameState.totalClicks,
-            prestigeLevel: gameState.prestigeLevel, megaPrestigeLevel: gameState.megaPrestigeLevel,
-            hyperPrestigeLevel: gameState.hyperPrestigeLevel, prestigePoints: gameState.prestigePoints,
-            totalPrestigePoints: gameState.totalPrestigePoints, nickname: gameState.nickname,
-            upgrades: gameState.upgrades, buildings: gameState.buildings, relics: gameState.relics,
-            quests: gameState.quests, bankBalance: gameState.bankBalance, bankDeposits: gameState.bankDeposits,
-            globalQuestMultiplier: gameState.globalQuestMultiplier
-        }));
     });
 
     function init() {
