@@ -6,7 +6,13 @@ import os
 REPO = "romanmakin92-dot/coin-clicker"
 GITHUB_TOKEN = os.environ.get("TOKEN_FOR_ACTIONS")
 
+print(f"Токен найден: {'да' if GITHUB_TOKEN else 'нет'}")
+
 def get_issues():
+    if not GITHUB_TOKEN:
+        print("Ошибка: токен не найден в переменных окружения")
+        return []
+    
     url = f"https://api.github.com/repos/{REPO}/issues"
     headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/json"}
     params = {"state": "all", "per_page": 100}
@@ -16,6 +22,9 @@ def get_issues():
     while True:
         params["page"] = page
         response = requests.get(url, headers=headers, params=params)
+        if response.status_code != 200:
+            print(f"Ошибка API: {response.status_code}")
+            break
         issues = response.json()
         if not issues:
             break
@@ -24,6 +33,7 @@ def get_issues():
         if len(issues) < 100:
             break
     
+    print(f"Найдено Issues: {len(all_issues)}")
     return all_issues
 
 def parse_value(body, pattern):
@@ -32,15 +42,15 @@ def parse_value(body, pattern):
         return 0
     val_str = match.group(1)
     multiplier = 1
-    if 'К' in val_str:
+    if 'К' in val_str or 'к' in val_str:
         multiplier = 1000
-        val_str = val_str.replace('К', '').strip()
-    elif 'М' in val_str:
+        val_str = re.sub(r'[Кк]', '', val_str).strip()
+    elif 'М' in val_str or 'м' in val_str:
         multiplier = 1000000
-        val_str = val_str.replace('М', '').strip()
-    elif 'Т' in val_str:
+        val_str = re.sub(r'[Мм]', '', val_str).strip()
+    elif 'Т' in val_str or 'т' in val_str:
         multiplier = 1000000000000
-        val_str = val_str.replace('Т', '').strip()
+        val_str = re.sub(r'[Тт]', '', val_str).strip()
     try:
         return int(float(val_str) * multiplier)
     except:
@@ -50,7 +60,7 @@ def extract_name(body):
     match = re.search(r'👤 Игрок: (.+?)(?:\n|$)', body)
     if match:
         return match.group(1).strip()
-    return "Аноним"
+    return None
 
 def update_leaderboard():
     issues = get_issues()
@@ -80,11 +90,21 @@ def update_leaderboard():
             players_data[name]["hyper"] = hyper
     
     leaderboard = {
-        "coins": [{"name": k, "value": v["coins"]} for k, v in players_data.items() if v["coins"] > 0],
-        "prestige": [{"name": k, "value": v["prestige"]} for k, v in players_data.items() if v["prestige"] > 0],
-        "mega": [{"name": k, "value": v["mega"]} for k, v in players_data.items() if v["mega"] > 0],
-        "hyper": [{"name": k, "value": v["hyper"]} for k, v in players_data.items() if v["hyper"] > 0]
+        "coins": [],
+        "prestige": [],
+        "mega": [],
+        "hyper": []
     }
+    
+    for name, data in players_data.items():
+        if data["coins"] > 0:
+            leaderboard["coins"].append({"name": name, "value": data["coins"]})
+        if data["prestige"] > 0:
+            leaderboard["prestige"].append({"name": name, "value": data["prestige"]})
+        if data["mega"] > 0:
+            leaderboard["mega"].append({"name": name, "value": data["mega"]})
+        if data["hyper"] > 0:
+            leaderboard["hyper"].append({"name": name, "value": data["hyper"]})
     
     for key in leaderboard:
         leaderboard[key].sort(key=lambda x: x["value"], reverse=True)
